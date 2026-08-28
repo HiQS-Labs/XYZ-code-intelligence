@@ -52,6 +52,19 @@ import psutil  # noqa: E402
 from sentence_transformers import SentenceTransformer  # noqa: E402
 
 _PROC = psutil.Process(os.getpid())
+_PROC.cpu_percent(interval=None)  # prime the baseline; first real reading is next call
+
+# --- profiling ---------------------------------------------------------------
+# Per-batch memory + CPU profile, written to .embed-tmp/<repo>/profile.csv so a
+# single-repo run can be inspected/plotted afterward instead of just eyeballing
+# the log.
+PROFILE = os.environ.get("EMBED_PROFILE", "1") == "1"
+
+
+def cpu_pct() -> float:
+    """CPU% since the last call. Can exceed 100 with multiple threads —
+    e.g. ~400% means all 4 of MAX_THREADS are pegged."""
+    return _PROC.cpu_percent(interval=None)
 
 
 def rss_mb() -> float:
@@ -156,14 +169,28 @@ def process_repo(repo_name: str, repo_path: str) -> None:
     # Encode in throttled batches (own loop, not model.encode's internal
     # batching) so we can sleep between batches and keep CPU usage capped.
     batch_embeddings = []
+    profile_rows = []  # (batch, elapsed_s, batch_s, chunks, rss_mb, cpu_pct)
     n_batches = (len(texts) + ENCODE_BATCH_SIZE - 1) // ENCODE_BATCH_SIZE
     over_cap_streak = 0
     for bi in range(n_batches):
         batch = texts[bi * ENCODE_BATCH_SIZE : (bi + 1) * ENCODE_BATCH_SIZE]
+        bt0 = time.time()
         emb = model.encode(batch, batch_size=ENCODE_BATCH_SIZE, convert_to_numpy=True)
+        batch_s = time.time() - bt0
         batch_embeddings.append(emb)
+
+        cur_rss, cur_cpu = rss_mb(), cpu_pct()  # one reading, reused below (cpu_percent
+                                                 # is "since last call" — calling twice
+                                                 # back-to-back would understate it)
+        if PROFILE:
+            profile_rows.append(
+                (bi, round(time.time() - t0, 2), round(batch_s, 3), len(batch),
+                 round(cur_rss, 1), round(cur_cpu, 1))
+            )
+
         if (bi + 1) % 10 == 0 or bi == n_batches - 1:
-            print(f"[{repo_name}] batch {bi + 1}/{n_batches}  rss={rss_mb():.0f}MB")
+            print(f"[{repo_name}] batch {bi + 1}/{n_batches}  "
+                  f"rss={cur_rss:.0f}MB  cpu={cur_cpu:.0f}%  batch_s={batch_s:.2f}")
 
         # RSS watchdog: back off, then abort rather than let the box swap.
         # A per-repo subprocess (see dispatch()) means this cap is measured
@@ -199,6 +226,24 @@ def process_repo(repo_name: str, repo_path: str) -> None:
             fh.write(json.dumps(c) + "\n")
 
     print(f"[{repo_name}] saved sidecars -> {out_dir}")
+
+    if PROFILE and profile_rows:
+        with open(out_dir / "profile.csv", "w", encoding="utf-8") as fh:
+            fh.write("batch,elapsed_s,batch_s,chunks,rss_mb,cpu_pct\n")
+            for row in profile_rows:
+                fh.write(",".join(str(v) for v in row) + "\n")
+
+        rss_vals = [r[4] for r in profile_rows]
+        cpu_vals = [r[5] for r in profile_rows if r[0] > 0]  # skip first (cpu baseline warmup)
+        batch_s_vals = [r[2] for r in profile_rows]
+        print(
+            f"[{repo_name}] profile: peak_rss={max(rss_vals):.0f}MB  "
+            f"avg_rss={sum(rss_vals) / len(rss_vals):.0f}MB  "
+            f"peak_cpu={max(cpu_vals, default=0):.0f}%  "
+            f"avg_cpu={(sum(cpu_vals) / len(cpu_vals)) if cpu_vals else 0:.0f}%  "
+            f"avg_batch_s={sum(batch_s_vals) / len(batch_s_vals):.2f}  "
+            f"-> {out_dir / 'profile.csv'}"
+        )
 
 
 def dispatch() -> int:

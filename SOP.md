@@ -70,3 +70,16 @@ sandboxed/restricted shells may reject the niceness change; the script still run
   processes that leak semaphores in a tight per-batch loop.
 - Always launch with `python -u` (or `PYTHONUNBUFFERED=1`) when logging to a file —
   otherwise stdout is block-buffered and progress lines won't show up until exit.
+
+### Profiling a single-repo run
+
+`EMBED_PROFILE=1` (default on) records per-batch RSS + CPU% + batch latency to
+`.embed-tmp/<repo>/profile.csv` (columns: `batch,elapsed_s,batch_s,chunks,rss_mb,cpu_pct`),
+and prints a summary line (peak/avg RSS, peak/avg CPU%, avg batch time) once the
+repo finishes. `cpu_pct` is CPU% since the last sample and can exceed 100 — e.g.
+~400% means all 4 of `EMBED_MAX_THREADS` are fully pegged. Use this to size
+`EMBED_MAX_MEM_MB` / `EMBED_MAX_THREADS` for a machine before running the full
+multi-repo batch. Run one repo directly (bypassing the dispatcher) with:
+```bash
+.venv/bin/python -u .embed-tmp/scripts/embed_repos.py --repo <name> <path>
+```
