@@ -1,3 +1,19 @@
+---
+title: NL-to-Code Retrieval Datasets — Full Evidence Table
+status: reference
+created: 2026-08-28
+updated: 2026-08-28
+owner: Noel Saw
+goal: Evidence appendix (Perplexity) for the v0.5 canonical research and build doc.
+roadmap_exempt: true
+---
+
+## Status
+
+| What was just completed | What's next |
+|---|---|
+| Frozen as an evidence appendix to the v0.5 canonical research and build doc (2026-08-28). | None — reference doc; execution lives in the canonical doc. |
+
 # Reusable Datasets for NL→Code Retrieval and Codebase RAG — Source-Cited Evidence Table
 
 Research date: 2026-08-28. Every value below comes from a page fetched during this session and is linked to the exact URL. Values that could not be confirmed on a fetched page are marked `n.a.` — nothing is filled in from memory.

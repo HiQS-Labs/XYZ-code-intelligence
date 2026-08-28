@@ -1,3 +1,19 @@
+---
+title: BGE Small vs Code-Capable Embeddings — Decision Report
+status: reference
+created: 2026-08-28
+updated: 2026-08-28
+owner: Noel Saw
+goal: Evidence appendix (Perplexity) for the v0.5 canonical research and build doc.
+roadmap_exempt: true
+---
+
+## Status
+
+| What was just completed | What's next |
+|---|---|
+| Frozen as an evidence appendix to the v0.5 canonical research and build doc (2026-08-28). | None — reference doc; execution lives in the canonical doc. |
+
 # BGE Small vs. Code-Capable Embeddings for Private-Repo Code RAG on Apple Silicon
 
 **Prepared:** 2026-08-28 · **Audience:** Noel Saw (Neochrome) · **Goal:** decide whether to fine-tune `BAAI/bge-small-en-v1.5` locally for semantic retrieval over private repos (Python, JS/TS, PHP, HTML/templates, Markdown/tests/config/routes/API schemas), or adopt a better starting point.

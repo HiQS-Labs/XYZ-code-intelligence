@@ -1,3 +1,19 @@
+---
+title: Code Embedding Models — Full Evidence Table
+status: reference
+created: 2026-08-28
+updated: 2026-08-28
+owner: Noel Saw
+goal: Evidence appendix (Perplexity) for the v0.5 canonical research and build doc.
+roadmap_exempt: true
+---
+
+## Status
+
+| What was just completed | What's next |
+|---|---|
+| Frozen as an evidence appendix to the v0.5 canonical research and build doc (2026-08-28). | None — reference doc; execution lives in the canonical doc. |
+
 # Code Embedding Models for Local Code RAG on Apple Silicon — Source-Cited Evidence Table
 
 **Scope of the question:** is it worth fine-tuning `BAAI/bge-small-en-v1.5` locally (Apple Silicon) for retrieval over private repos containing Python, JS/TS, PHP, HTML/server-rendered templates, plus Markdown/tests/config/routes/API schemas — or is a different compact checkpoint a better starting point?

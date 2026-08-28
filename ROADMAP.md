@@ -14,7 +14,7 @@
 
 | What was just completed | What's next |
 |---|---|
-| Installed PDDA (2026-08-28). | Open a `PROJECT/**` doc for the first tracked effort and add its pointer here. |
+| Synthesized v0.5 research into the canonical XYZ build doc (2026-08-28). | Phase 1 of the canonical doc: chunking + hybrid retrieval skeleton. |
 
 ## Ledger
 
@@ -24,7 +24,7 @@
 
 ### In progress
 
-- No active `PROJECT/2-WORKING` docs.
+- [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and sunset Ask-Self; the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.
 
 ### Completed
 

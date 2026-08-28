@@ -2,3 +2,4 @@ PROJECT/PDDA-ACTIVITY.jsonl
 .pdda-gh-state.tsv
 .xyz/
 /.tick/
+.venv/
