@@ -209,16 +209,28 @@ Only for arms that cleared the Phase 3 gate.
 2. Score against `.embed-tmp/eval/queries-LTVera-Pandas.json`.
 3. Compare against the fp32 baseline.
 
-> **Blocker to clear before Phase 4 can run on the VM.** `.embed-tmp/eval/score_retrieval.py` as
-> written scores *two* models in one pass and calls Gemini unconditionally —
-> `client = genai.Client(api_key=os.environ["GEMINI_KEY"])` at line 76. On the benchmark VM there
-> is no Gemini key and no reason to call the API, so the script would **hard-crash on a
-> `KeyError`** before scoring anything.
->
-> The scorer needs a **local-only comparison mode** that takes two local index directories
-> (candidate quantized arm vs. fp32 baseline) and does no network calls. Do this **before**
-> provisioning, so VM time is not spent debugging a scoring script. Keep the Gemini path behind a
-> flag for the existing cross-model comparison.
+> **Blocker CLEARED** ([GH-6](GH-6-LOCAL-ONLY-SCORER.md), issue
+> [#6](https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/6)). The scorer previously called
+> Gemini unconditionally and would have `KeyError`d on the VM *after* the expensive re-index. It
+> now takes N labelled arms with Gemini opt-in and a lazy import, so a local-only run needs no key
+> and not even the package. The Run 9 baseline was reproduced exactly after the change.
+
+Invocation for a quantized arm — note `--model`/`--backend` are per-arm, so each arm encodes
+queries with **its own** model:
+
+```bash
+python .embed-tmp/eval/score_retrieval.py \
+    --queries .embed-tmp/eval/queries-LTVera-Pandas.json \
+    --arm  "fp32=temp/LTVera-Pandas" \
+    --arm  "onnx-int8=temp/LTVera-Pandas-onnx-int8" \
+    --model   "onnx-int8=<exported model dir>" \
+    --backend "onnx-int8=onnx" \
+    --threads 4 \
+    --out temp/eval_quant.json
+```
+
+`--threads 4` keeps the scorer's own query encoding on the same 4-thread footing as the
+[thread-pinning requirement](#thread-pinning--mandatory-for-a-fair-comparison) above.
 
 **Corpus choice.** The labelled query set targets `LTVera-Pandas` (5,147 chunks). Either re-index
 that repo, or build a matching labelled set for the smaller `aegis-sleuth-slack-bot` (3,226

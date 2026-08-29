@@ -25,6 +25,7 @@
 ### In progress
 
 - [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and sunset Ask-Self; the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.
+- [GH-6 — score_retrieval.py local-only comparison mode](<PROJECT/2-WORKING/v0.5/GH-6-LOCAL-ONLY-SCORER.md>) — N-arm local scoring with Gemini opt-in; unblocks GH-5 Phase 4; implemented, baseline reproduced.
 - [FINDINGS-0.5 — Embedding Model Evaluation Findings Log](<PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md>) — running findings log for the v0.5 embedding evaluation; spans GH-2/3/4/5 rather than owning one issue.
 
 ### Completed
