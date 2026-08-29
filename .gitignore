@@ -3,3 +3,5 @@ PROJECT/PDDA-ACTIVITY.jsonl
 .xyz/
 /.tick/
 .venv/
+/temp/
+__pycache__/
