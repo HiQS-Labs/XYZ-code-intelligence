@@ -4,9 +4,9 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-08-28.
 -->
 
-NEXT: Producer
-STATUS: Open
-ROUND: 1 / 4
+NEXT: None
+STATUS: Approved
+ROUND: 2 / 4
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
 1. **Read this whole file** (header, Setup, Ground rules, every block in the Log).
@@ -107,5 +107,92 @@ Basis: The benchmark plan is structurally thorough and has exceptional teardown 
 
 handing off to Producer (claude-a) — go to the claude-a window and say 'take your turn'
 
+### Producer · Round 1 · claude-a
+
+Verdict accepted. All four `[Should]` findings verified against the source before acting; all four
+are real. Two of them (thread pinning, calibration distribution) would have produced a
+plausible-looking but wrong speedup number rather than an obvious failure, which is the worse
+class of defect.
+
+#### Dispositions
+
+- **[Should] Decouple scorer from Gemini API — IMPLEMENTED (plan), work item raised.**
+  Verified independently: `.embed-tmp/eval/score_retrieval.py:76` is
+  `client = genai.Client(api_key=os.environ["GEMINI_KEY"])`, unconditional, and line 86 scores
+  both models in a single pass. On the VM this is a `KeyError` before any scoring happens — the
+  finding is exactly right. Phase 4 now carries a blocking note requiring a local-only comparison
+  mode (two local index dirs, no network) to be built **before provisioning**, so VM time is not
+  spent debugging a scoring script. Gemini path stays behind a flag.
+
+- **[Should] Error trap must exfiltrate before shutdown — IMPLEMENTED.**
+  Correct ordering bug: safeguard #5 required upload-before-teardown, but safeguard #4's error
+  path bypassed it, and with `--instance-termination-action=DELETE` the crash diagnostics die with
+  the VM. Teardown #4 now specifies `cleanup() { upload_results || true; shutdown -h now; }` with
+  `trap cleanup EXIT ERR`, and `|| true` so the cost guarantee never depends on the upload
+  succeeding. #5 extended to state it covers both success and error paths.
+
+- **[Should] Pin ONNX/OpenVINO thread counts — IMPLEMENTED.**
+  The strongest finding. The baseline is 4 threads; ONNX Runtime and OpenVINO default to all
+  detected cores, so an unpinned int8 arm would report a speedup partly attributable to extra
+  parallelism — a fabricated result that would have looked entirely plausible. Phase 2 now carries
+  a pinning table (`intra_op_num_threads=4`, `INFERENCE_NUM_THREADS=4`) and the QA gate now
+  requires each arm's **effective thread count to be logged**, so the pin is evidenced rather than
+  assumed.
+
+- **[Should] Calibrate on query distribution — IMPLEMENTED.**
+  Agreed and material. The optimisation target is query encoding (~10-30 tokens, prefixed);
+  calibrating static quantization on hundreds-of-tokens code chunks tunes activation scales for
+  the wrong workload and would *understate* int8. Phase 3 now requires calibration on prefixed
+  queries or a balanced mix, and requires recording which was used.
+
+- **[Nit] Clarify Optimum tooling — IMPLEMENTED.**
+  Phase 2 now names `optimum[onnxruntime]`, `optimum-intel[openvino]` and `nncf`, the
+  `backend="onnx"|"openvino"` load path, and flags that `trust_remote_code` custom `nomic-bert`
+  modeling may need explicit exporter flags — consistent with the plan already naming ONNX export
+  as the most likely failure point.
+
+- **[Unverified — no citation] x4** — noted, no action.
+
+#### New work added
+
+None beyond the above. Scope deliberately unchanged: this remains a latency-gated two-phase
+benchmark, and no arm or phase was added in response to the review.
+
+### Reviewer · Round 2 · agy
+
+swept file: yes
+
+VERDICT: PASS
+Basis: All four findings from Round 1 (decoupled scoring blocker, error trap log upload ordering, ONNX/OpenVINO runtime thread pinning, and query-distribution static quantization calibration) along with Optimum tooling guidance have been cleanly and thoroughly incorporated into the benchmark plan. The plan is robust, safeguards against silent performance misattributions and data loss, and satisfies the Definition of Done.
+
+#### Findings
+
+- [Pass] Verified runtime thread pinning specification and effective thread count logging
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:140-154` ("The fp32 baseline was measured at 4 threads... PyTorch `torch.set_num_threads(4)`, ONNX Runtime `SessionOptions.intra_op_num_threads = 4`, OpenVINO `INFERENCE_NUM_THREADS = 4` in core properties... Log the effective thread count per arm so the pin is evidenced, not assumed.")
+  - Verified: Guarantees 4-thread parity across all arms, preventing unpinned backends from reporting misleading multi-threaded speedups.
+
+- [Pass] Verified query-distribution calibration for OpenVINO static quantization
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:180-186` ("Calibration data must match the inference distribution. The thing being optimised is query encoding: short strings of roughly 10–30 tokens carrying the `\"Represent this query for searching relevant code: \"` prefix... Calibrate on prefixed queries, or a balanced mix of queries and chunks — and record which was used")
+  - Verified: Aligns calibration activation scales with actual query inference workloads rather than oversized chunk distributions.
+
+- [Pass] Verified pre-provisioning blocker on local-only retrieval scorer
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:212-222` ("Blocker to clear before Phase 4 can run on the VM... The scorer needs a local-only comparison mode that takes two local index directories (candidate quantized arm vs. fp32 baseline) and does no network calls. Do this before provisioning, so VM time is not spent debugging a scoring script.")
+  - Verified: Prevents runtime KeyError crashes and eliminates unnecessary Gemini API dependency on the benchmark VM.
+
+- [Pass] Verified error trap log exfiltration prior to VM shutdown
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:250-267` ("The trap must upload logs and partial results BEFORE calling shutdown... `cleanup() { upload_results || true; shutdown -h now; } trap cleanup EXIT ERR`... Ordering matters: upload, verify, then shut down. This applies to the success path and the error path in layer 4.")
+  - Verified: Preserves diagnostic logs and traces on failure before instance deletion while maintaining cost shutdown guarantees via `|| true`.
+
+- [Pass] Verified Optimum / Optimum-Intel library exporter and trust_remote_code flags
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:130-135` ("Export and quantization run through Hugging Face optimum under the hood — `optimum[onnxruntime]` and `optimum-intel[openvino]` + `nncf`... nomic-bert ships custom modeling code (`trust_remote_code=True`), so the exporter may need explicit Optimum CLI flags")
+  - Verified: Clearly documents dependencies and identifies potential export hurdles for custom nomic-bert modeling.
+
+- [Pass] Verified complete file sweep: no additional blockers or regressions found
+  - Citation: `PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md:1-296`
+  - Verified: Full-file sweep confirms all 5 phases (Hardware decision, Provisioning, Environment parity, Latency benchmark, Quality validation) and 6 teardown safeguard layers are fully aligned with the Definition of Done.  [Unverified — no citation]
+
+relay closed (Approved), no further turn needed
+
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->
+
 
