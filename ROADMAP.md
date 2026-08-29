@@ -14,17 +14,18 @@
 
 | What was just completed | What's next |
 |---|---|
-| Synthesized v0.5 research into the canonical XYZ build doc (2026-08-28). | Phase 1 of the canonical doc: chunking + hybrid retrieval skeleton. |
+| Benchmarked CodeRankEmbed vs Gemini embeddings across 4 repos; near-parity on a 30-query labelled set (2026-08-28). | GH-5: int8 quantization benchmark on GCP Intel (Sapphire Rapids). |
 
 ## Ledger
 
 ### Queue / parked intake
 
-- No parked intake docs.
+- **GH-5 · int8 Quantization Benchmark on GCP Intel** — [PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md](<PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md>) — benchmark ONNX/OpenVINO int8 query-encode latency on Sapphire Rapids; rated 3/3/3/5
 
 ### In progress
 
 - [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and sunset Ask-Self; the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.
+- [FINDINGS-0.5 — Embedding Model Evaluation Findings Log](<PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md>) — running findings log for the v0.5 embedding evaluation; spans GH-2/3/4/5 rather than owning one issue.
 
 ### Completed
 

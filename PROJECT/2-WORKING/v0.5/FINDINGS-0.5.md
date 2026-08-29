@@ -1,3 +1,22 @@
+---
+title: FINDINGS-0.5 — Embedding Model Evaluation Findings Log
+status: active
+created: 2026-08-28
+updated: 2026-08-28
+owner: Noel Saw
+goal: Running findings log for the v0.5 embedding-model evaluation — CodeRankEmbed across four repos, measured against Gemini embeddings on a labelled retrieval set.
+effort: 3
+complexity: 3
+risk: 2
+related:
+  - "PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md"
+  - "PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md"
+context_tags: [embeddings, retrieval, benchmarking, coderankembed, gemini, evaluation]
+non_goals:
+  - Per-issue execution planning — that lives in the GH-numbered docs (e.g. GH-5)
+  - Replacing the run-by-run record in .embed-tmp/BENCHMARKS.md
+---
+
 # FINDINGS-0.5.md
 
 Running findings log for the v0.5 embedding-model evaluation.
@@ -8,6 +27,22 @@ Scope: `nomic-ai/CodeRankEmbed` run over four repos, compared against Google
 Supporting detail: `.embed-tmp/BENCHMARKS.md` (run-by-run record, including failures),
 `.embed-tmp/eval/` (labelled query set + scorer). Sidecars and raw telemetry live in
 `temp/` (gitignored).
+
+> **Naming note.** This doc keeps its non-`GH-` name deliberately: it is a *findings log
+> spanning* issues [#2](https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/2),
+> [#3](https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/3),
+> [#4](https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/4) and
+> [#5](https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/5), not the execution doc for
+> any single one. Per the PDDA issue-intake contract, `GH-<number>-*.md` names a doc that owns
+> one issue's execution; renaming this to a single number would misrepresent its scope.
+> Per-issue execution docs are named that way — see
+> [GH-5-QUANTIZATION-BENCHMARK.md](GH-5-QUANTIZATION-BENCHMARK.md).
+
+## Status
+
+| What was just completed | What's next |
+|---|---|
+| Embedded all 4 repos (16,433 chunks), scored CodeRankEmbed vs Gemini on a 30-query labelled set — near-parity (2026-08-28). | Embed the file path with each chunk (§3) and re-score; then GH-5 quantization benchmark on GCP Intel. |
 
 ---
 
