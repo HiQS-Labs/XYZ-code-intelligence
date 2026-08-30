@@ -92,20 +92,34 @@ def encode_local(queries, model_ref, backend, device, threads, max_seq, use_pref
     return v / np.linalg.norm(v, axis=1, keepdims=True)
 
 
-def encode_gemini(queries, model_ref, dims):
-    """Encode queries with the Gemini API. Imported lazily — never touched unless a
-    --gemini-arm was requested, so local-only runs need no key and no package."""
+def encode_gemini(queries, model_ref, dims, vertex_project=None, vertex_location=None):
+    """Encode queries with Gemini, via Vertex AI or the Developer API.
+
+    Imported lazily — never touched unless a --gemini-arm was requested, so
+    local-only runs need no key and no package.
+
+    Vertex (--vertex-project) authenticates with ADC and bills through the
+    project's Cloud Billing account, so its spend lands under any Cloud Billing
+    budget. The Developer API key path bills through AI Studio's separate prepay
+    pool instead, which a Cloud Billing budget does not cover.
+    """
     try:
         from google import genai
         from google.genai import types
     except ImportError:
         sys.exit("score_retrieval: a --gemini-arm was requested but google-genai is not "
                  "installed. Install it, or drop the --gemini-arm for a local-only run.")
-    key = os.environ.get("GEMINI_KEY")
-    if not key:
-        sys.exit("score_retrieval: a --gemini-arm was requested but GEMINI_KEY is unset. "
-                 "Set it, or drop the --gemini-arm for a local-only run.")
-    client = genai.Client(api_key=key)
+
+    if vertex_project:
+        client = genai.Client(vertexai=True, project=vertex_project,
+                              location=vertex_location or "us-central1")
+    else:
+        key = os.environ.get("GEMINI_KEY")
+        if not key:
+            sys.exit("score_retrieval: a --gemini-arm was requested but GEMINI_KEY is unset. "
+                     "Set it, pass --vertex-project to use Vertex AI with ADC instead, or "
+                     "drop the --gemini-arm for a local-only run.")
+        client = genai.Client(api_key=key)
     r = client.models.embed_content(
         model=model_ref,
         contents=[q["q"] for q in queries],
@@ -157,6 +171,9 @@ def parse_args(argv):
     p.add_argument("--gemini-arm", action="append", metavar="LABEL=INDEX_DIR",
                    help="Gemini arm; repeatable. Only these trigger any network call.")
     p.add_argument("--gemini-model", default=DEFAULT_GEMINI_MODEL)
+    p.add_argument("--vertex-project", default=None,
+                   help="use Vertex AI (ADC auth, bills via Cloud Billing) instead of an API key")
+    p.add_argument("--vertex-location", default="us-central1")
     p.add_argument("--dims", type=int, default=768)
     p.add_argument("--device", default="cpu")
     p.add_argument("--threads", type=int, default=4)
@@ -217,8 +234,11 @@ def main(argv=None):
         results.append(score(label, qv, norms, chunks, queries))
 
     for label, d in gemini.items():
-        print(f"[{label}] gemini · model={a.gemini_model} dims={a.dims}")
-        qv = encode_gemini(queries, a.gemini_model, a.dims)
+        route = (f"vertex project={a.vertex_project} location={a.vertex_location}"
+                 if a.vertex_project else "developer-api (GEMINI_KEY)")
+        print(f"[{label}] gemini · model={a.gemini_model} dims={a.dims} · {route}")
+        qv = encode_gemini(queries, a.gemini_model, a.dims,
+                           a.vertex_project, a.vertex_location)
         norms, chunks = loaded[label]
         results.append(score(label, qv, norms, chunks, queries))
 

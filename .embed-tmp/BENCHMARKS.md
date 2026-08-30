@@ -442,6 +442,93 @@ labels are author-assigned from filename semantics rather than independently adj
 This is enough to rule out "one model is clearly better", not enough to detect a small
 true difference.
 
+---
+
+## Run 10 — GH-5 quantization benchmark, GCP Sapphire Rapids (2026-08-30)
+
+Host: GCP `c3-standard-4`, **Intel Xeon Platinum 8481C (Sapphire Rapids)**, 4 vCPU / 16 GB,
+Debian 12, Python 3.11.2, torch 2.13.0+cpu, sentence-transformers 6.0.0, onnxruntime 1.29.0,
+openvino 2026.3.1, nncf 3.3.0. CPU flags verified present: `amx_int8`, `amx_bf16`, `amx_tile`,
+`avx512_vnni`.
+
+Raw telemetry, logs, `lscpu` and `pip freeze`: `temp/gh5-vm-results/`.
+
+### Phase 1 — query-encode latency (60 samples, 5 warmup discarded, 4 threads)
+
+Thread pins were **read back and verified** per arm (`intra_op_num_threads=4`,
+`inter_op=1`), not assumed — an unpinned backend would bank extra parallelism as speedup.
+
+| arm | mean ms | p50 | p95 | peak RSS | speedup | cosine vs fp32 |
+|---|---|---|---|---|---|---|
+| baseline (torch fp32) | 62.53 | 62.41 | 65.56 | 970 MB | 1.00× | 1.0 |
+| **onnx-fp32** | **29.09** | 28.63 | 33.36 | 1844 MB | **2.15×** | **1.000000** |
+| onnx-int8 | **10.68** | 10.40 | 12.24 | 1422 MB | **5.85×** | 0.959884 |
+| openvino-int8 | 21.44 | 20.09 | 23.72 | 1641 MB | 2.92× | **0.713665** |
+
+For reference the same fp32 workload measures **44.0 ms on the M4 Pro**, so this Intel box is
+~1.4× slower than the Mac at fp32 CPU encoding.
+
+### Phase 2 — quality, `onnx-int8`, full 5,147-chunk re-index
+
+Re-embedded the entire corpus with the int8 model (0.676 s/chunk, 3,478 s) and scored against
+the labelled 30-query set.
+
+| metric | fp32 baseline | onnx-int8 | delta |
+|---|---|---|---|
+| MRR | 0.801 | **0.6966** | **−0.104** |
+| R@1 | 0.700 | **0.5333** | **−0.167** |
+| R@3 | 0.867 | 0.900 | +0.033 |
+| R@5 | 0.933 | 0.9333 | 0.000 |
+| R@10 | 0.933 | 0.9333 | 0.000 |
+
+**Verdict: reject `onnx-int8`.** The plan set the noise floor at ~0.05 (one query moves R@1 by
+0.033 at n=30). The R@1 drop of **0.167 is five queries' worth** — far outside noise, and a 24%
+relative degradation in top-1 retrieval. R@3/5/10 hold, so the right chunk is still *found*, just
+ranked lower. For a code-search UI where the first hit is what gets read, that is the metric that
+matters.
+
+### Winner: `onnx-fp32`
+
+**2.15× faster at cosine exactly 1.000000.** Graph optimisation only, no quantization, so the
+vectors are identical to the fp32 baseline — which means the index is identical and retrieval
+quality is *provably* unchanged. No Phase 2 run was needed to establish that, and none could
+have changed it.
+
+A free doubling of query throughput with zero quality risk is a better outcome than the 5.85×
+that costs 17 points of R@1.
+
+### `openvino-int8` — deliberately not quality-tested
+
+It is **dominated**: slower than `onnx-int8` (21.44 ms vs 10.68) *and* far lower fidelity
+(cosine 0.714 vs 0.960). Since 0.960 already cost −0.167 R@1, 0.714 cannot plausibly pass a
+quality gate that 0.960 failed. Spending ~35 min of VM time to confirm a foregone conclusion was
+not decision-relevant. **Recorded as not measured, not as passed or failed.**
+
+The likely cause is NNCF's default PERFORMANCE preset quantizing activations aggressively; a
+mixed-precision or accuracy-preserving preset would be the thing to try if OpenVINO is revisited.
+
+### Lessons that cost time
+
+1. **`sentence-transformers` `backend="onnx"` cannot load this model.** It looks for a
+   pre-exported ONNX artifact in the HF repo, finds none, and falls through to nomic's custom
+   loader raising `OSError: Model name nomic-ai/CodeRankEmbed was not found` — which reads like
+   an unsupported architecture but is not. `optimum-cli export onnx --trust-remote-code` works
+   fine. **Export first, then load the local directory.**
+2. **OpenVINO's native exporter genuinely does reject `nomic_bert`** ("custom or unsupported
+   architecture … no `custom_export_configs`"). Convert the exported ONNX with
+   `ov.convert_model` + NNCF instead.
+3. **The exported graph outputs `token_embeddings` / `sentence_embedding`**, not
+   `last_hidden_state`, so ST's ONNX module fails at inference with a `KeyError` even after
+   loading. Driving the runtimes directly is simpler and gives exact thread control.
+4. **Fidelity is not a substitute for a quality run.** Cosine 0.96 looked benign and cost 17
+   points of R@1. Had we shipped on the cosine number alone, the regression would have reached
+   production.
+
+### Cost
+
+VM ran ~1.4 h at ~$0.20/h ≈ **$0.28**. Deleted immediately after the copy-off; verified zero
+remaining instances, disks, images, snapshots or addresses, so ongoing cost is **$0**.
+
 ## Output location
 
 Sidecars and benchmark artifacts now live in `temp/` at the repo root, which is
