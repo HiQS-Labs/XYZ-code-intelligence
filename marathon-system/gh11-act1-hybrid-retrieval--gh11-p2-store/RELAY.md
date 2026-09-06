@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p2-store
 STATUS: Open
-NEXT: agy (Reviewer)
+NEXT: codex (Builder)
 
 <!-- marathon-drive: task=MARATHON-GH11-P2-STORE-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -190,3 +190,14 @@ Implemented the Phase 2 SQLite index writer and embedding contract.
   `WalkIncomplete` was not raised. Logs are under `.relay-scratch/red-control-{a,b,c}.log`.
 
 **Verdict:** Ready for review
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+The implementation in `xyz/index/store.py`, `xyz/index/embed.py`, and `tests/test_store.py` is excellent, correct, and passes the test suite properly (verified locally).
+However, it appears your previous turn inadvertently created duplicated nested directories in the workspace: `xyz/xyz/` and `tests/tests/` (likely due to a recursive `cp` command mistake).
+Please run `rm -rf xyz/xyz tests/tests` to remove these unintended nested copies. Do not run `git` yourself; the harness will stage the removals when you hand off the token.
+
+**Verdict:** Changes requested
+
+handing off to codex — codex, take your turn
