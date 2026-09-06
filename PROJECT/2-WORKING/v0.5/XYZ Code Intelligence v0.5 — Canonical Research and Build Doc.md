@@ -190,6 +190,14 @@ of its architecture (2026-08-28):
   exported `ASK_SELF_PATH` (made every repo query Ask-Self's own index), and copied-not-linked
   slash commands that go stale on upgrade.
 
+> **Reconciliation with issue #11 (rewritten 2026-08-30; note added 2026-09-05).** The release
+> issue supersedes this doc on posture: XYZ **absorbs** Ask-Self's Python pipeline (cache, drift
+> detection, revision tracking, harness config) rather than rewriting it, and swaps only the
+> embedding and ranking layers. Phase 0 steps 2-3 and all of Phase 1 are executed as **Act 1** of #11
+> via [GH-11-ACT1-HYBRID-RETRIEVAL.md](GH-11-ACT1-HYBRID-RETRIEVAL.md). Phase 2's 250-query benchmark
+> is deferred: the existing 30-query set is saturated (#11 caveat 2) and growing it is human
+> labelling work. Phases 3-5 stand as written.
+
 ## Phase 0 — Decision lock and repo scaffolding
 
 1. Ratify this doc as canonical; mark the five research inputs as evidence appendices.
@@ -260,9 +268,15 @@ benchmark query (or its gold chunk) appears in training data.
 ## Phase 5 — Ask-Self sunset and migration
 
 1. Port the surviving Ask-Self harness configs to XYZ format for the repos that use them.
-2. Replace the `/ask_self` and `/reingest` skill entry points with XYZ equivalents.
-3. Archive the Ask-Self repo: README banner pointing here, final tag, stop indexing.
-4. Delete stale global state (`ASK_SELF_PATH` export, copied slash commands).
+2. Port Ask-Self's synthesis + citation + doc-history layer into XYZ: citation-grounded
+   answer synthesis over retrieved chunks (Ask-Self's Gemini Pro synthesis step), source
+   attribution (`sources_consulted`), and doc revision history / as-of querying
+   (`ask_self_ingest.py`'s additive doc-history mode). XYZ's own retrieval (dense + BM25 +
+   RRF + rerank, Phases 1-4) replaces Ask-Self's sqlite-vec retrieval; only this synthesis
+   layer is new surface area, not a second vector store.
+3. Replace the `/ask_self` and `/reingest` skill entry points with XYZ equivalents.
+4. Archive the Ask-Self repo: README banner pointing here, final tag, stop indexing.
+5. Delete stale global state (`ASK_SELF_PATH` export, copied slash commands).
 
 **QA gate:** every repo formerly served by Ask-Self answers its smoke queries through XYZ at
 equal-or-better Recall@10; Ask-Self archived with pointer.

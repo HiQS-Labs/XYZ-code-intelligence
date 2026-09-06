@@ -1,0 +1,52 @@
+# GH-11 Act 1 — XYZ hybrid retrieval library (canonical doc Phase 0 + Phase 1).
+# Run from the target repo root:
+#   ./.xyz/relay-automation/marathon.sh --plan PROJECT/2-WORKING/v0.5/GH-11-marathon/MARATHON.yaml
+# Builder is codex (marathon.sh default), so every reviewer is agy (builder != reviewer required).
+# Phase ids are globally unique (gh11-*) so lane state never collides in .tick/attempts/.
+# Execution surface of record: PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md
+
+name: gh11-act1-hybrid-retrieval
+phases:
+  - id: gh11-p0-scaffold
+    name: "p0: Phase 0 close-out — constraints, pyproject, xyz/ skeleton, validate.sh"
+    reviewer: agy
+    brief: PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md
+    artifact: GUIDING-PRINCIPLES.md,pyproject.toml,validate.sh,xyz/,tests/
+    turn_timeout_s: 1200
+    max_review_rounds: 2
+
+  - id: gh11-p1-chunkers
+    name: "p1: Tree-sitter / Markdown / file-level chunkers with path-prefixed text"
+    reviewer: agy
+    brief: PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md
+    artifact: xyz/,tests/,pyproject.toml
+    depends_on: gh11-p0-scaffold
+    turn_timeout_s: 1800
+    max_review_rounds: 3
+
+  - id: gh11-p2-store
+    name: "p2: SQLite store — chunks + FTS5 + vec0, provider-keyed embed cache, drift guard"
+    reviewer: agy
+    brief: PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md
+    artifact: xyz/,tests/,pyproject.toml
+    depends_on: gh11-p1-chunkers
+    turn_timeout_s: 1800
+    max_review_rounds: 3
+
+  - id: gh11-p3-retrieve
+    name: "p3: BM25 + dense -> RRF -> cross-encoder rerank -> tau, with latency instrumentation"
+    reviewer: agy
+    brief: PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md
+    artifact: xyz/,tests/,pyproject.toml
+    depends_on: gh11-p2-store
+    turn_timeout_s: 1800
+    max_review_rounds: 3
+
+  - id: gh11-p4-roundtrip
+    name: "p4: xyz CLI + real ingest/query round-trip on LTVera-Pandas, scored and recorded"
+    reviewer: agy
+    brief: PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md
+    artifact: xyz/,tests/,pyproject.toml,PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md,PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md
+    depends_on: gh11-p3-retrieve
+    turn_timeout_s: 7200
+    max_review_rounds: 3
