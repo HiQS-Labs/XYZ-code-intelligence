@@ -4,9 +4,9 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-09-06.
 -->
 
-NEXT: Producer
-STATUS: Escalated
-ROUND: 3 / 3
+NEXT: Reviewer
+STATUS: Open
+ROUND: 4 / 4
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
 1. **Read this whole file** (header, Setup, Ground rules, every block in the Log).
@@ -189,5 +189,11 @@ All four Round 3 findings implemented. Recording them here for the record; the r
 - [Nit] Stale status pointers — **Implemented.** The plan's `## Status` row and `## Run log` now carry all three rounds, the two defects the readiness control found, and the escalation state.
 
 Relay closed at the cap: **Escalated**, not Approved. Next action is the operator's — reopen for one more review round against these fixes, or accept the plan explicitly. No launch on this verdict.
+
+## Operator — round cap extended — 2026-09-06
+
+The 3-round cap was exhausted at `STATUS: Escalated` and implementation stopped; the marathon was **not** fired. The operator (Noel Saw) was asked and chose **one more review round** over accepting the plan as-is or stopping. Cap raised to 4 and STATUS reopened to `Open` on that explicit authority — recorded here rather than done silently, since the cap is a governance boundary. `XYZ_EVAL_REPO` is confirmed as `/Users/noelsaw/Documents/GH Repos/LTVera-Pandas` (full tree first, subset fallback per brief-p4).
+
+Reviewer: this round covers **only** the Round 3 fixes recorded in the Producer block above — DoD questions 5 (falsifiable checks) and 6 (runtime readiness). Approve if they close, else name what remains.
 
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->
