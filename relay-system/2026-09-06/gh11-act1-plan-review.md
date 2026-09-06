@@ -4,8 +4,8 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-09-06.
 -->
 
-NEXT: Reviewer
-STATUS: Open
+NEXT: Producer
+STATUS: Escalated
 ROUND: 4 / 4
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
@@ -195,5 +195,19 @@ Relay closed at the cap: **Escalated**, not Approved. Next action is the operato
 The 3-round cap was exhausted at `STATUS: Escalated` and implementation stopped; the marathon was **not** fired. The operator (Noel Saw) was asked and chose **one more review round** over accepting the plan as-is or stopping. Cap raised to 4 and STATUS reopened to `Open` on that explicit authority — recorded here rather than done silently, since the cap is a governance boundary. `XYZ_EVAL_REPO` is confirmed as `/Users/noelsaw/Documents/GH Repos/LTVera-Pandas` (full tree first, subset fallback per brief-p4).
 
 Reviewer: this round covers **only** the Round 3 fixes recorded in the Producer block above — DoD questions 5 (falsifiable checks) and 6 (runtime readiness). Approve if they close, else name what remains.
+
+## Reviewer — codex — Round 4 — 2026-09-06
+
+Verdict: Changes requested
+swept file: yes
+
+Swept the complete plan, MARATHON.yaml, all five briefs, `validate.sh`, and `prelaunch.sh`, including their pre-existing content, while limiting the decision to the operator-authorized DoD questions 5 and 6. Read the retained `.relay-scratch/prelaunch.json` and the installed libraries' cache-resolution source. No artifact/source execution, model probes, project gates, or git commands were performed. No graph tools were exposed; direct source inspection is the evidence tier. Reversibility: Easy. Bet: bind readiness to the cache the libraries actually resolve, or an offline builder can inherit a false-success marker after cache environment drift.
+
+- [Blocker] **The readiness marker still does not bind the effective Hugging Face cache for two supported environment paths.** `prelaunch.sh:35-40` and `validate.sh:31-39` record/compare raw `HF_HOME`, `HF_HUB_CACHE`, and `TRANSFORMERS_CACHE`, but reconstruct `hf_hub_dir` from `HF_HOME` alone. The installed `huggingface_hub/constants.py:158-179` resolves its default through `XDG_CACHE_HOME` and allows legacy `HUGGINGFACE_HUB_CACHE` to feed `HF_HUB_CACHE`; `transformers/utils/hub.py:408` then uses that resolved constant. Neither omitted variable changes the current fingerprint, so changing either after a successful prelaunch can make validation accept a marker for a different or empty cache; cheap imports/parser checks do not load the models (`validate.sh:43-51`). **Fix:** in both scripts fingerprint the library-resolved cache constants (at minimum `huggingface_hub.constants.HF_HOME` and `HF_HUB_CACHE`, plus the effective Transformers module/cache directory used here) rather than hand-reconstructing them, and add `XDG_CACHE_HOME=<empty>` and `HUGGINGFACE_HUB_CACHE=<empty>` success→drift controls proving `validate.sh` rejects until prelaunch is rerun. Preserve the marker-first invalidation and atomic publication at `prelaunch.sh:21-25,116-122`.
+- [Pass] **The τ test now matches the query-level API contract.** p3:75-78 defines the top-score decision and preserved ranking; p3:89-97 separates BM25 score direction from two τ searches, explicitly retaining the below-τ secondary hit when the top hit passes and returning empty hits when the top fails.
+- [Pass] **Chunk IDs now survive the scoring boundary and make same-path reorders falsifiable.** p4:50-64 accepts ordered `(chunk_id, path)` records, judges relevance by path, serializes both fields, and requires a same-path/two-ID round-trip; p4:73-82 computes and tests reorder count from chunk-ID sequences and rejects empty query input.
+- [Pass] **The remaining phase red controls and runtime fallback stay concrete at plan level.** p0:89-96, p1:100-105, p2:107-117, p3:112-119, and p4:109-120 each name a failure-sensitive check/red control. p4:83-95 gives the measured-ETA trigger, fresh root-preserving subset DB, unchanged re-ingest, depth-100 evaluation, and recorded metrics; `MARATHON.yaml:45-52` retains the 7200-second p4 budget. `.relay-scratch/prelaunch.json:27-52` records successful offline model shapes/scores for the pinned interpreter, but that success does not close the cache-drift escape above.
+
+DoD disposition for this authorized round: question 5 now passes; question 6 remains open because readiness can still false-pass after effective cache drift. Round 4 / 4 is exhausted, so STATUS is Escalated, not Approved. Handing off to claude-a (Producer) — go to the Producer window and say 'take your turn' to disposition the remaining readiness blocker and return the escalation to the operator; do not launch on this verdict.
 
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->
