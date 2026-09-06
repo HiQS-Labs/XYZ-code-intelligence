@@ -5,9 +5,10 @@ unclear, the option that better serves these principles wins.
 
 ## Purpose
 
-PDDA exists to make a repo's project docs a **reliable source of truth and work signal for
-long-running AI agent tasks** — so an agent (or human) can stop, resume, or hand off at any point and
-recover full state from the docs alone, not from memory or chat history.
+XYZ Code Intelligence is a **local-first code retrieval system** for answering natural-language
+questions about codebases. It is the planned successor to Ask-Self, combining dense and lexical
+retrieval with reranking on the operator's machine while keeping the repository's work state
+reliable for long-running human and AI-agent collaboration.
 
 ## Principles
 
@@ -33,6 +34,12 @@ recover full state from the docs alone, not from memory or chat history.
    If a run's closing line contradicts its own output, the signal is lost no matter how correct the
    detector was — so summary lines must reflect what was actually found. Corollary of #3: being
    deterministic about *detecting* is wasted if the *reporting* rounds it off.
+9. **Local-first.** Ingest, embedding, retrieval, and reranking run on the operator's machine with
+   no network call on the query path. A cloud API may appear only as an explicitly opt-in comparison
+   arm, never as the primary lane.
+10. **Permissively licensed models only.** Every model weight the pipeline loads is Apache-2.0 or
+    MIT (or equivalent). Verify the licence on the model card before a model enters any run; a model
+    whose licence is unstated or non-commercial is rejected, not deferred.
 
 ## How to apply
 

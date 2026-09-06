@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p0-scaffold
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P0-SCAFFOLD-TURN builder=codex reviewer=agy round-cap=5 -->
 
@@ -142,3 +142,42 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Implemented the Phase 0 scaffold.
+
+- Updated `GUIDING-PRINCIPLES.md` with a repo-accurate XYZ Code Intelligence purpose and principles
+  9-10 for local-first execution and permissively licensed models; the original eight principles are
+  unchanged.
+- Added `pyproject.toml` with the requested project metadata, setuptools backend, console entry point,
+  package discovery, pytest configuration, and exact runtime dependency versions from the pinned
+  interpreter. That interpreter has no `pip` module, so the installed distribution versions were read
+  through `importlib.metadata`: sentence-transformers 6.0.1, torch 2.14.0, einops 0.8.2, numpy 2.4.6,
+  sqlite-vec 0.1.9, tree-sitter 0.26.0, and tree-sitter-language-pack 1.16.1.
+- Added the `xyz/` package skeleton and argparse CLI. Empty invocation prints help and returns 0;
+  `--version` returns 0; unknown and not-yet-implemented subcommands return 2.
+- Added `tests/__init__.py` and `tests/test_smoke.py` for the four required smoke assertions.
+- Reviewed `validate.sh`; no check was wrong, so it remains unchanged.
+
+Focused verification (the full gate was intentionally left to the harness):
+
+```text
+....                                                                     [100%]
+4 passed in 0.01s
+0.5.0.dev0
+pyproject assertions: OK
+```
+
+Required red controls were run against the individual gate checks and then restored:
+
+```text
+validate: xyz.__version__ = '0.0.0', expected '0.5.0.dev0'
+exit=1
+validate: required path missing: xyz/__main__.py
+exit=1
+```
+
+Reversibility: Easy. The scaffold consists only of new package/test files plus narrowly scoped
+governance text; the principal failure mode is a dependency pin mismatch, covered by recording the
+versions from the exact pinned interpreter.

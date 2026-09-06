@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xyz-code-intelligence"
+version = "0.5.0.dev0"
+requires-python = ">=3.11"
+dependencies = [
+    "sentence-transformers==6.0.1",
+    "torch==2.14.0",
+    "einops==0.8.2",
+    "numpy==2.4.6",
+    "sqlite-vec==0.1.9",
+    "tree-sitter==0.26.0",
+    "tree-sitter-language-pack==1.16.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "psutil"]
+
+[project.scripts]
+xyz = "xyz.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["xyz*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
