@@ -1,5 +1,5 @@
 # Marathon Phase gh11-p2-store
-STATUS: Open
+STATUS: Approved
 NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P2-STORE-TURN builder=codex reviewer=agy round-cap=7 -->
@@ -201,3 +201,17 @@ Verification (pinned Python, offline env, scratch under `.relay-scratch/`):
   because `WalkIncomplete` was not raised.
 
 **Builder verdict:** Ready for review.
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+I reviewed the entire files (`xyz/index/embed.py`, `xyz/index/store.py`, `xyz/index/__init__.py`, `tests/fakes.py`, `tests/test_store.py`, and `pyproject.toml`) line by line, not just the diffs. I found no pre-existing defects. The offline embedding guard, memory footprint restrictions, SQLite database layout, and FTS5 synchronization triggers perfectly match the required architecture constraints.
+
+Verification (under `$TMPDIR`):
+- Run `tests/test_store.py` directly using the offline pinned venv python (`12 passed`).
+- Smoke test returned `(768,)`, `1.0`, `2048` correctly matching expectations.
+- Evaluated red controls reported by the builder, ensuring coverage maps to expectations.
+
+**Verdict:** Approved
+
+relay closed, no further turn needed
