@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p1-chunkers
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P1-CHUNKERS-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -151,3 +151,34 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Implemented the Phase 1 ingest surface:
+
+- Added `xyz/ingest/walk.py` with sorted, prefix-preserving traversal; the required caller-owned
+  error list; extension/name filters; 1 MiB and binary guards; excluded-directory handling; and
+  recoverable enumeration/stat/read errors.
+- Added `xyz/ingest/chunk.py` with immutable chunk/result records, Tree-sitter dispatch for Python,
+  JavaScript, TypeScript/TSX/JSX, and PHP, top-level/module/method extraction, Markdown heading
+  sections, file fallback, source-line maps, path-prefixed embedded text and SHA-256 identities.
+- Added the 6,000-character splitter with nearest-blank preference, hard-cut fallback, 150-character
+  overlap, qualified-name suffixes, and source-correct line bounds across split parts.
+- Exported `walk_repo`, `chunk_file`, and `chunk_repo` from `xyz/ingest/__init__.py`; walk failures
+  are retained in the caller's `errors` list and surfaced through `ChunkResult.warnings`.
+- Added `tests/fixtures/mini-repo/` and `tests/test_chunkers.py`, covering language chunks and exact
+  names/lines, Markdown hierarchy, YAML/Dockerfile inclusion, binary/exclusion behavior, prefix
+  scoping, missing roots, deterministic output, parse fallback, split bounds/overlap, and a
+  mid-traversal `PermissionError` that records exactly one error after an earlier yield.
+
+Verification (only the phase-specific test, with temporary output under `.relay-scratch`):
+
+- `python -m pytest -p no:cacheprovider tests/test_chunkers.py -q` → `11 passed in 0.07s`.
+- Red control, disposable copy without the embedded path prefix → the prefix assertion failed
+  (`1 failed`), then the unchanged working implementation was re-run green.
+- Red control, disposable copy without the hard-cut fallback → the 6,001-character assertion failed
+  (`len(single[0].text) == 1`, expected `6000`; `1 failed`), then the unchanged working
+  implementation was re-run green.
+
+The warn-only drift notice named `relay-automation/relay-turn-lib.sh`, `src/project.js`, and
+`src/events.js`; none is on this phase's dependency or edit path.
