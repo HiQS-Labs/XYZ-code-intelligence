@@ -31,14 +31,26 @@ RERANKER = os.environ.get("XYZ_RERANKER", "mixedbread-ai/mxbai-rerank-xsmall-v1"
 
 def env_fingerprint():
     """What this readiness run actually validated. validate.sh compares it to the live env, so a
-    changed reranker or model cache invalidates readiness instead of silently reusing it."""
-    return {
+    changed reranker or model cache invalidates readiness instead of silently reusing it.
+
+    The cache paths are read from the LIBRARIES' OWN resolved constants, not reconstructed from
+    HF_HOME. huggingface_hub resolves its default through XDG_CACHE_HOME and accepts the legacy
+    HUGGINGFACE_HUB_CACHE, so a hand-built path misses both and would let readiness survive a real
+    cache change (GH-11 plan review r4). Same function is used by validate.sh — one definition."""
+    import huggingface_hub.constants as hc
+    fp = {
         "reranker": RERANKER,
-        "HF_HOME": os.environ.get("HF_HOME", ""),
-        "HF_HUB_CACHE": os.environ.get("HF_HUB_CACHE", ""),
-        "TRANSFORMERS_CACHE": os.environ.get("TRANSFORMERS_CACHE", ""),
-        "hf_hub_dir": str(pathlib.Path(os.environ.get("HF_HOME", pathlib.Path.home() / ".cache/huggingface")) / "hub"),
+        "hf_home": str(getattr(hc, "HF_HOME", "")),
+        "hf_hub_cache": str(getattr(hc, "HF_HUB_CACHE", "")),
+        "hf_assets_cache": str(getattr(hc, "HF_ASSETS_CACHE", "")),
     }
+    try:
+        import transformers.utils.hub as th
+        fp["transformers_cache"] = str(getattr(th, "TRANSFORMERS_CACHE", getattr(th, "HF_MODULES_CACHE", "")))
+        fp["hf_modules_cache"] = str(getattr(th, "HF_MODULES_CACHE", ""))
+    except Exception:
+        fp["transformers_cache"] = fp["hf_modules_cache"] = "<unresolved>"
+    return fp
 
 report = {"xyz_py": sys.executable, "python": sys.version.split()[0], "checks": {},
           "env": env_fingerprint(), "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}

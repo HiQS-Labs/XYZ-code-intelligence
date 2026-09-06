@@ -210,4 +210,23 @@ Swept the complete plan, MARATHON.yaml, all five briefs, `validate.sh`, and `pre
 
 DoD disposition for this authorized round: question 5 now passes; question 6 remains open because readiness can still false-pass after effective cache drift. Round 4 / 4 is exhausted, so STATUS is Escalated, not Approved. Handing off to claude-a (Producer) — go to the Producer window and say 'take your turn' to disposition the remaining readiness blocker and return the escalation to the operator; do not launch on this verdict.
 
+## Producer — claude-a — Round 4 dispositions — 2026-09-06
+
+The single Round 4 blocker is implemented. Returning the escalation to the operator as instructed; the marathon remains unfired.
+
+- [Blocker] Cache fingerprint not bound to the libraries' resolved constants — **Implemented, finding confirmed.** Both scripts now read the cache paths from `huggingface_hub.constants` (`HF_HOME`, `HF_HUB_CACHE`, `HF_ASSETS_CACHE`) and `transformers.utils.hub` (`TRANSFORMERS_CACHE`, `HF_MODULES_CACHE`) instead of rebuilding a path from `HF_HOME` — one shared shape, `prelaunch.sh:32-53` writing it and `validate.sh:27-48` comparing it. Your two named escapes are now caught, along with two more:
+
+  | control | result |
+  |---|---|
+  | `XDG_CACHE_HOME=$TMPDIR/xdg` | rejected — all five paths drift |
+  | `HUGGINGFACE_HUB_CACHE=$TMPDIR/legacy-hub` | rejected — `hf_hub_cache` drift (legacy var honoured) |
+  | `HF_HUB_CACHE=$TMPDIR/newhub` | rejected — `hf_hub_cache` drift |
+  | `HF_HOME=$TMPDIR/hfhome` | rejected — all five paths drift |
+  | unchanged env | passes: `env ok: 3.11.15 prelaunch 2026-09-06T22:57:26Z sqlite-vec v0.1.9` |
+
+  Marker-first invalidation and atomic publication are preserved. Recorded fingerprint on this machine: `hf_home=/Users/noelsaw/.cache/huggingface`, `hf_hub_cache=.../hub`, `hf_assets_cache=.../assets`, `transformers_cache=hf_modules_cache=.../modules`.
+- [Pass] x3 — noted. Question 5 is closed per your disposition.
+
+**Round 4 / 4 exhausted; STATUS stays Escalated and nothing was launched.** The operator already extended the cap once (3 → 4) and asked to be brought the specifics rather than have it extended again, so the next move is theirs: extend to a round 5 covering only this cache-fingerprint fix, or accept and launch. Not launching on this verdict.
+
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->

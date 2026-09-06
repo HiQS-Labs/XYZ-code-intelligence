@@ -27,14 +27,22 @@ m = json.load(open(sys.argv[1]))
 if not m.get("ok"): sys.exit("validate: prelaunch marker records NOT READY — re-run prelaunch.sh")
 if m.get("xyz_py") != sys.executable: sys.exit(f"validate: prelaunch marker is for {m.get('xyz_py')}, not {sys.executable}")
 # The marker must have validated THIS configuration: the same reranker and the same model cache.
-# Otherwise a stale success would vouch for a model or cache that was never tested.
+# Cache paths come from the LIBRARIES' resolved constants (huggingface_hub resolves through
+# XDG_CACHE_HOME and honours the legacy HUGGINGFACE_HUB_CACHE), never rebuilt from HF_HOME — a
+# hand-built path misses both and lets a stale marker vouch for a cache that was never tested.
+import huggingface_hub.constants as hc
 live = {
     "reranker": os.environ.get("XYZ_RERANKER", "mixedbread-ai/mxbai-rerank-xsmall-v1"),
-    "HF_HOME": os.environ.get("HF_HOME", ""),
-    "HF_HUB_CACHE": os.environ.get("HF_HUB_CACHE", ""),
-    "TRANSFORMERS_CACHE": os.environ.get("TRANSFORMERS_CACHE", ""),
-    "hf_hub_dir": str(pathlib.Path(os.environ.get("HF_HOME", pathlib.Path.home() / ".cache/huggingface")) / "hub"),
+    "hf_home": str(getattr(hc, "HF_HOME", "")),
+    "hf_hub_cache": str(getattr(hc, "HF_HUB_CACHE", "")),
+    "hf_assets_cache": str(getattr(hc, "HF_ASSETS_CACHE", "")),
 }
+try:
+    import transformers.utils.hub as th
+    live["transformers_cache"] = str(getattr(th, "TRANSFORMERS_CACHE", getattr(th, "HF_MODULES_CACHE", "")))
+    live["hf_modules_cache"] = str(getattr(th, "HF_MODULES_CACHE", ""))
+except Exception:
+    live["transformers_cache"] = live["hf_modules_cache"] = "<unresolved>"
 was = m.get("env") or {}
 drift = {k: (was.get(k), v) for k, v in live.items() if was.get(k) != v}
 if drift:

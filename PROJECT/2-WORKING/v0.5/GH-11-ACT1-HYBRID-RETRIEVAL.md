@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Codex plan review rounds 1-3: 13 findings implemented; round 3's marker-invalidation blocker, τ contract and scorer-input fixes landed (2026-09-06). | **Blocked on operator decision:** the relay hit its 3-round cap at `STATUS: Escalated`, so the marathon must not fire. Extend the cap for a round-4 re-review, or accept the plan explicitly. |
+| Codex plan review rounds 1-4: 14 findings implemented; r4 bound the readiness marker to the libraries' resolved HF cache constants (2026-09-06). | **Blocked on operator decision:** relay at its extended 4-round cap, `STATUS: Escalated`. Extend to round 5 for the cache-fingerprint fix, or accept the plan and fire. |
 
 ## Observed problem
 
