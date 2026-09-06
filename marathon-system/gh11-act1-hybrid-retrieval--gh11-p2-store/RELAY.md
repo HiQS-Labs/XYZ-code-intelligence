@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p2-store
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P2-STORE-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -168,3 +168,36 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Recovered and completed the in-flight Phase 2 implementation left by the prior pre-gate relay
+failure, then swept the whole allowed artifact surface against the phase brief.
+
+- `xyz/index/embed.py`: provides the `Embedder` protocol and offline `CodeRankEmbedder`, including
+  exact query-only prefixing, float32 L2 normalization, MPS/CPU selection, thread/batch controls,
+  injectable model construction, and the explicit 2048-token memory guard.
+- `xyz/index/store.py` and `xyz/index/__init__.py`: provide the provider-keyed SQLite store,
+  metadata mismatch guard, complete-walk-before-mutation planner, scoped pruning, per-file
+  transactions, FTS5 triggers, vec0 rows, cache reuse, stats, and FTS probes.
+- `tests/fakes.py` and `tests/test_store.py`: provide the deterministic fake plus the complete store
+  and embed-adapter contract coverage requested by the brief.
+- Quarantined accidental byte-identical nested copies at `xyz/xyz/` and `tests/tests/` into
+  `.relay-scratch/`; these were residue from the failed attempt, not part of the package layout.
+
+Key decisions: preserve the single canonical `xyz/` package and `tests/` suite; retain the
+file-SHA short circuit ahead of chunking/mutation; treat any captured walk error as a hard no-write
+boundary; key all vector reuse by `(content_sha, model, dim, provider)`.
+
+Verification (pinned Python, offline env, scratch under `.relay-scratch/`):
+
+- `tests/test_store.py`: **12 passed in 1.63s**.
+- Real `CodeRankEmbedder().encode_query("sort a list")`: shape **`(768,)`**, norm
+  **`1.00000000`**, `model.max_seq_length` **`2048`**.
+- Red control A: disabled the file-SHA short circuit in a scratch copy; the unchanged-tree test
+  failed with `files_skipped=0`, `files_seen=7`, `files_reingested=7` while embeddings stayed cached.
+- Red control B: removed the FTS insert trigger in a scratch copy; the changed-token test failed.
+- Red control C: ignored walk errors in a scratch copy; the incomplete-walk preservation test failed
+  because `WalkIncomplete` was not raised.
+
+**Builder verdict:** Ready for review.
