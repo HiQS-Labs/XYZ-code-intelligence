@@ -4,9 +4,9 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-09-06.
 -->
 
-NEXT: Producer
+NEXT: Reviewer
 STATUS: Open
-ROUND: 1 / 3
+ROUND: 2 / 3
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
 1. **Read this whole file** (header, Setup, Ground rules, every block in the Log).
@@ -105,5 +105,22 @@ Citation shorthand below: `plan` = `PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RET
 - [Pass] **Several acceptance choices are explicit and citable.** Query-only prefix matches `SOP.md:31-33` and p2:25-27; `k = ?` and its red control are specified at p3:27-29,67-68,84 and supported by issue #11 Act 1's quoted “Use the vec0 k = ? KNN form”. Empty-query rejection is explicitly required at p4:90-91. Rating `85/60/50/30` has a stated rationale, neutral appeal and “No operator override” at plan:132-136. The historical user-order assertion is not independently verified by this review.
 
 DoD disposition: grounding, completeness/deviation accounting, DRY inheritance, executable blast radius, falsifiable gates, and runtime/fallback contracts need the fixes above; rating rationale passes. Producer should disposition each finding and revise only the plan/brief/gate artifacts in its own turn. Handing off to claude-a (Producer) for revision and round 2.
+
+## Producer — claude-a — Round 2 — 2026-09-06
+
+Dispositions for every Round 1 finding (all changes are to the plan, briefs and gate only; no code exists yet):
+
+- [Blocker] Metric depth — **Implemented.** p4 now reports MRR@D / R@k / miss@D at an explicit depth D = 100 (`fetch_k=100` per lane) with its own dense-only arm at that depth as the baseline; Run 9 is context only. `per_query` rows carry the ordered `ranking`; ranks are chunk ranks (no silent path dedupe); rank-11 red case at depth 10 vs 100; `SearchResult.ranking` (p3) exposes the full candidate order. See brief-p4 §Context, Task 1, DoD; brief-p3 Task 5; plan §Recon.
+- [Blocker] Offline prerequisites — **Implemented.** Environment contract (`XYZ_PY`, `XYZ_SCRATCH`, `XYZ_EVAL_REPO`, offline env) defined in `validate.sh` and brief-p0 §Environment; `validate.sh` now runs an env preflight (interpreter, modules, both cached models, FTS5) before anything else; offline vars are exported and briefs tell the builder to export them for ad-hoc smokes; `PYTHONPATH=<repo>` replaces the editable install (no `*.egg-info/` writes); p4 asserts `$XYZ_EVAL_REPO/scripts` and `/app` exist before starting. Isolation note: the operator exports the values when firing.
+- [Blocker] Subset fallback — **Implemented.** `walk_repo(include_prefixes=...)` is a root-preserving filtered walk (p1 Task 1, tested for unchanged `rel_path`); `Store.ingest` raises `EmptyCorpus` on zero files and scopes pruning to the walked prefixes (p2 Task 2 + tests); p4 fallback is a **fresh** DB, one invocation with three `--include-prefix`, ETA-triggered (> 45 min after 200 chunks), labelled `corpus: subset`; `xyz eval` refuses an empty corpus or missing gold paths (exit 2) and records corpus provenance.
+- [Blocker] Red controls / gate — **Implemented.** `validate.sh` is now unconditional (package presence incl. `xyz/__main__.py`, exact `__version__ == 0.5.0.dev0`, `python -m xyz --version`, pytest); p0 red controls flip the version and delete `__main__.py`; p2 red controls assert `files_skipped == files_seen` / `files_reingested == 0` separately from embedder calls, plus `fts_match` tests for inserted/changed/deleted tokens with a trigger-disabled red control.
+- [Should] Grounding — **Implemented.** Plan §Recon and brief-p1 §Context corrected: `iter_files`, existing fields `path/start_line/end_line/text` + `id/repo`, new fields named as new; `max_seq_length=2048` attributed to FINDINGS-0.5.md and made a stub-model acceptance assertion in p2 (with query-prefix-on-queries-only asserted the same way).
+- [Should] Chunk contract — **Implemented.** `chunk_file -> ChunkResult(chunks, warnings)`, `chunk_repo -> ChunkResult`, warnings surface only via `IngestReport`; hard cut at 6,000 chars when no blank line (single-line 6,001-char test), Markdown sections bounded too; module chunk line range defined; 6,000 chars stated as a character heuristic under the 2048-token cap.
+- [Should] Scope deviations — **Implemented.** Three new entries under "Acceptance — deviations": sidecar → fresh ingest (reason), ABSORB of planner/revisions/harness → Act 2 with the single-planner argument, and the non-saturated-set win criterion recorded as outstanding.
+- [Should] Containment / entry point — **Implemented.** Generated output goes to `$XYZ_SCRATCH` (default `.relay-scratch/`), nothing under `temp/`; no editable install; `xyz/__main__.py` required in p0 and asserted by the gate; `CHANGELOG.md` assigned to the orchestrator at PR time (plan §Dependencies, briefs §Non-goals).
+- [Should] Retrieval API — **Implemented.** `mode="auto"` default with explicit resolution rule; explicit `hybrid` never reranks; `hybrid+rerank` without a reranker raises; per-mode τ semantics and empty-candidate behaviour defined; `Retriever` validates the embedder against the store via `Store.check_embedder`; model/dim/provider mismatches tested independently at open and at query time.
+- [Pass] ×2 — noted; no change.
+
+Round 2 requested: please re-check questions 1-7 against the revised artifacts (`validate.sh`, brief-p0…p4, plan §Recon/§Acceptance/§Dependencies). Handing off to codex (Reviewer) — codex, take your turn.
 
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->

@@ -4,7 +4,7 @@ source: https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/11
 title: GH-11 Act 1 — XYZ hybrid retrieval library (canonical doc Phase 0 + Phase 1)
 status: active
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-06
 owner: Noel Saw
 goal: Ship the importable XYZ retrieval library — Tree-sitter chunking, SQLite chunks + FTS5 + sqlite-vec store with a provider-keyed embed cache and drift guard, and a BM25 + dense → RRF → cross-encoder rerank query path — verified by an ingest/query round-trip on one real repo, so Acts 2-5 of the v0.5 release are unblocked.
 doc_type: feedback
@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Plan, phase briefs, marathon file and preflight contract authored; clone + venv provisioned (2026-09-05). | Codex plan review, then fire `marathon.sh` on the five phases in order. |
+| Codex plan review round 1: 4 blockers + 5 shoulds all implemented in the briefs, gate and plan (2026-09-06). | Codex round 2; on Approved, fire `marathon.sh` on the five phases in order. |
 
 ## Observed problem
 
@@ -57,12 +57,17 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 ## Recon (base `3301124`, 2026-09-05)
 
-- Existing writer for chunks: `.embed-tmp/scripts/embed_repos.py` — `INCLUDE_EXT`, `walk_repo`,
-  per-repo re-exec, `max_seq_length=2048`, batch 16, `EMBED_PROFILE` telemetry. Keep it untouched;
-  the library supersedes it, and it stays as the benchmark-history tool until Phase 3.
-- Existing metric definitions: `.embed-tmp/eval/score_retrieval.py` — `rank_of_first_relevant`,
-  MRR with misses as 0, recall@{1,3,5,10}, `never_found`; hit = retrieved chunk `path` in
-  `relevant`. p4 reuses these definitions verbatim so numbers are comparable with Run 9.
+- Existing writer for chunks: `.embed-tmp/scripts/embed_repos.py` — `INCLUDE_EXT`, `iter_files`
+  (~line 106), per-chunk records with `path`, `start_line`, `end_line`, `text` plus `id`/`repo`
+  (~136-140, ~160-161), per-repo re-exec, batch 16, `EMBED_PROFILE` telemetry. It does **not** set
+  `max_seq_length`; the 2048 cap is a FINDINGS-0.5.md requirement (~174-179) that the new embedder
+  must set and test. `qualified_name`, `kind`, `content_sha`, `embedded_text` are new fields. Keep
+  the script untouched; the library supersedes it, and it stays as the benchmark-history tool.
+- Existing metric definitions: `.embed-tmp/eval/score_retrieval.py` — `rank_of_first_relevant`
+  (~133-138), MRR with misses as 0, recall@{1,3,5,10}, `never_found`, `per_query` (~141-156); hit =
+  retrieved chunk `path` in `relevant`. It ranks the **whole corpus**; the hybrid pipeline ranks
+  `fetch_k` candidates, so p4 reports the same metrics **at an explicit depth D = 100** with its own
+  dense-only arm at that depth as the baseline. Run 9 is context, not a comparable number.
 - Labelled set: `.embed-tmp/eval/queries-LTVera-Pandas.json` — 30 queries, file-path gold labels,
   saturated at R@3+ after the path-prefix fix (issue #11 caveat 2). Deltas under 0.05 are noise
   (GH-5 doc).
@@ -93,6 +98,18 @@ The issue's Act 1 checklist, with what this doc owns:
   asserts the query text.
 - Measure batch indexing RSS on ARM — **[dropped]** — reason: no ARM box is in scope for this
   marathon; the p4 run records RSS on the build machine instead and leaves the ARM row for Act 5.
+- "…over the existing 21,580-vector sidecar" — **[changed]** to a fresh ingest of one repo — reason:
+  the sidecars are gitignored and not on this branch, and the p1 chunker (path prefix, wider walk)
+  changes every chunk, so old vectors would be invalid anyway (FINDINGS-0.5.md: index and query
+  model/chunks must match).
+- REFACTOR / ABSORB of Ask-Self's revision tracking, ingest planner and harness config
+  (issue #11 calibration) — **[dropped]** here, owned by Act 2 — reason: Act 1 needs only the
+  cache-key + mismatch semantics (carve-out 1) to be correct; the XYZ file-sha planner in
+  `xyz/index/store.py` is the single planner Act 2 reconciles Ask-Self's onto (no second
+  planner/store is created here, so nothing is duplicated to remove later).
+- "beats vector-only on a **non-saturated** query set" (exit criterion) — **[changed]**, remains
+  **outstanding** after this act — reason: growing the set is canonical Phase 2 human labelling; this
+  act's gate is the noise-floor comparison above and does not claim to close that criterion.
 
 Canonical doc Phase 1 QA gate, adopted verbatim as this act's gate: ingest + query round-trip on
 one real repo; unchanged re-ingest is near-instant (planner dedupe works); rerank stage measurably
@@ -114,13 +131,20 @@ Canonical writer for the index is `xyz/index/store.py` — one SQLite file per i
 
 ## Dependencies, risks, rollback
 
-- Depends on: the venv at `.venv/` (sentence-transformers, torch, sqlite-vec, tree-sitter,
-  tree-sitter-language-pack, pytest) and the HF cache holding `nomic-ai/CodeRankEmbed` and
-  `cross-encoder/ms-marco-MiniLM-L-6-v2` (Apache-2.0). Builder turns run with `HF_HUB_OFFLINE=1`; no
-  network is assumed inside a turn.
-- Risk — p4 embedding time: ~5,100+ chunks at ~0.3 s/chunk on MPS ≈ 25-30 min; the turn timeout is
-  set to 7200 s. Fallback recorded in the brief: ingest the `scripts/`, `app/`, `alembic/` subtrees
-  only (every gold label lives there) and say so in the results.
+- Environment contract (defined in `validate.sh`, values exported by the operator when firing):
+  `XYZ_PY` (interpreter with the pinned deps; default `<repo>/.venv/bin/python`), `XYZ_SCRATCH`
+  (generated evidence; default `<repo>/.relay-scratch`, the harness's swept scratch dir — nothing
+  goes under `temp/`), `XYZ_EVAL_REPO` (absolute path to the LTVera-Pandas checkout; p4 fails fast if
+  unset), `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1`. `validate.sh`'s env preflight checks the
+  interpreter, the modules, both cached models and FTS5 before anything else, so a turn cannot start
+  on an unprovisioned tree. No `pip install` and no editable install inside a turn (the latter
+  writes `*.egg-info/` into the tree); `PYTHONPATH=<repo>` makes `xyz` importable.
+- Risk — p4 embedding time: ~5,100+ chunks at ~0.3 s/chunk on MPS ≈ 25-35 min; the turn timeout is
+  7200 s. The CLI prints an ETA after 200 chunks; > 45 min triggers the fallback: a **fresh** DB
+  ingested in one root-preserving invocation restricted to `scripts/`, `app/`, `alembic/` (every gold
+  label lives there), labelled `corpus: subset` wherever reported.
+- Containment: `CHANGELOG.md` is not on any phase allowlist by design — the orchestrator writes the
+  end-of-iteration entry when opening the PR (AGENTS.md §7).
 - Risk — reranker choice is a placeholder: `cross-encoder/ms-marco-MiniLM-L-6-v2` is general-domain.
   It is configurable; the bake-off (Phase 3) picks the real one. The p3 gate tests behaviour with a
   fake reranker so the placeholder cannot make the gate flaky.
@@ -177,3 +201,7 @@ n/a (feature). No operator override.
 - 2026-09-05 — clone `XYZ-code-intelligence-gh11-act1`, branch
   `marathon/gh11-act1-hybrid-retrieval-2026-09-05` off `origin/v0.5/embedding-eval-coderankembed-vs-gemini`
   (`3301124`, stacked: no PR exists for that branch yet). Venv provisioned, reranker pre-cached.
+- 2026-09-06 — preflight ready (exit 0), `marathon.sh --dry-run` OK (5 phases in order). Codex plan
+  review round 1 (`relay-system/2026-09-06/gh11-act1-plan-review.md`): changes requested — metric
+  depth, environment contract, subset fallback, red controls, grounding, chunk contract, deviation
+  accounting, containment, API defaults. All implemented; round 2 requested.

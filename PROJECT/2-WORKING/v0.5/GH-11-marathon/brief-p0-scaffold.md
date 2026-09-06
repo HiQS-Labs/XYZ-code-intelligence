@@ -2,7 +2,7 @@
 title: GH-11 marathon brief — gh11-p0-scaffold
 status: active
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-06
 owner: Noel Saw
 goal: Phase brief consumed by marathon-drive.sh for phase gh11-p0-scaffold; the plan of record is GH-11-ACT1-HYBRID-RETRIEVAL.md.
 roadmap_exempt: true
@@ -14,22 +14,30 @@ roadmap_exempt: true
 
 | What was just completed | What's next |
 |---|---|
-| Brief authored (2026-09-05). | Executed by `marathon.sh` as phase `gh11-p0-scaffold`; outcome recorded in the capture doc. |
+| Brief revised after Codex plan review round 1 (2026-09-06). | Executed by `marathon.sh` as phase `gh11-p0-scaffold`; outcome recorded in the capture doc. |
 
 Execution surface of record: `PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md`
 (issue: https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/11, Act 1).
 Canonical doc: `PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md`
 → "Phase 0 — Decision lock and repo scaffolding", steps 2-3.
 
-## Environment (read first)
+## Environment contract (read first — applies to every phase)
 
-- Python venv already exists at `.venv/` (Python 3.11) with `sentence-transformers`, `torch`,
-  `einops`, `numpy`, `sqlite-vec`, `tree-sitter`, `tree-sitter-language-pack`, `pytest`, `psutil`.
-  Run everything as `.venv/bin/python ...`. **No network inside a turn** — do not `pip install`;
-  if a dependency is missing, say so in the relay and stop.
-- `HF_HUB_OFFLINE=1` is exported by `validate.sh`; the HF cache already holds
-  `nomic-ai/CodeRankEmbed` and `cross-encoder/ms-marco-MiniLM-L-6-v2`.
-- Gate: `bash validate.sh` (already present, thin). Extend it, never weaken it.
+`validate.sh` defines it; the operator exports the values when launching the marathon:
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `XYZ_PY` | interpreter carrying the pinned deps (`sentence-transformers`, `torch`, `einops`, `numpy`, `sqlite-vec`, `tree-sitter`, `tree-sitter-language-pack`, `pytest`, `psutil`) | `<repo>/.venv/bin/python` |
+| `XYZ_SCRATCH` | where generated evidence goes (index DBs, eval JSON, logs); swept by the harness, never committed | `<repo>/.relay-scratch` |
+| `XYZ_EVAL_REPO` | the corpus for the p4 round-trip (an absolute path to a LTVera-Pandas checkout) | unset — p4 fails fast if unset |
+| `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`, `TOKENIZERS_PARALLELISM=false` | no network inside a turn; both models are already in the HF cache | exported by `validate.sh`; **export them yourself before any ad-hoc smoke** |
+
+Rules: run Python only as `"$XYZ_PY"`; **no `pip install`**, no editable install (it writes
+`*.egg-info/` into the tree, an off-lane write) — the package is imported from the tree via
+`PYTHONPATH=<repo>` which `validate.sh` sets and `pyproject.toml` mirrors for pytest; write scratch
+only under `$XYZ_SCRATCH`. Before starting, run `bash validate.sh` once: its `env preflight` section
+must pass (interpreter, modules, both cached models, FTS5); the later sections are expected to fail
+until this phase is done.
 
 ## Task
 
@@ -44,40 +52,38 @@ Canonical doc: `PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical 
      MIT (or equivalent). Verify the licence on the model card before a model enters any run; a
      model whose licence is unstated or non-commercial is rejected, not deferred.
    Leave the other principles intact (they still govern the PDDA docs in this repo).
-2. **`pyproject.toml`** at the repo root: project name `xyz-code-intelligence`, version `0.5.0.dev0`,
-   `requires-python = ">=3.11"`, dependencies pinned to the *installed* versions (read them with
-   `.venv/bin/python -m pip list`): `sentence-transformers`, `torch`, `einops`, `numpy`, `sqlite-vec`,
-   `tree-sitter`, `tree-sitter-language-pack`; optional group `dev = ["pytest", "psutil"]`; console
-   script `xyz = "xyz.cli:main"`; setuptools build backend with `packages = ["xyz", ...]` found
-   automatically (`[tool.setuptools.packages.find] include = ["xyz*"]`). Install it editable:
-   `.venv/bin/python -m pip install -e . --no-deps --no-build-isolation` (works offline).
-3. **`xyz/` package skeleton** (canonical Phase 0 step 2), modules only — no logic yet beyond
-   docstrings and `__version__`:
-   - `xyz/__init__.py` (`__version__ = "0.5.0.dev0"`)
-   - `xyz/ingest/__init__.py` — chunking (p1)
-   - `xyz/index/__init__.py` — SQLite store + embed cache (p2)
-   - `xyz/retrieve/__init__.py` — BM25 + dense + RRF + rerank (p3)
-   - `xyz/eval/__init__.py` — metrics (p4)
-   - `xyz/cli.py` with a `main()` that prints the version and the subcommand list (`ingest`,
-     `query`, `eval`) and exits 0; real subcommands land in p4.
-4. **`tests/`**: `tests/__init__.py` empty; `tests/test_smoke.py` asserting `import xyz` and that
-   `xyz.cli.main([])` returns 0 (make `main` accept an `argv` list for testability).
-5. **Extend `validate.sh`**: it already runs the import smoke and pytest once `pyproject.toml`
-   exists — confirm it goes green end to end after your changes. Add the editable-install line
-   `"$PY" -m pip install -e . --no-deps --no-build-isolation -q` guarded by `[[ -f pyproject.toml ]]`
-   so a fresh clone with the venv can self-heal the import.
+2. **`pyproject.toml`** at the repo root: name `xyz-code-intelligence`, version `0.5.0.dev0`,
+   `requires-python = ">=3.11"`, dependencies pinned to the versions `"$XYZ_PY" -m pip list` shows
+   for `sentence-transformers`, `torch`, `einops`, `numpy`, `sqlite-vec`, `tree-sitter`,
+   `tree-sitter-language-pack`; optional group `dev = ["pytest", "psutil"]`; console script
+   `xyz = "xyz.cli:main"` (declared for a future install — not installed in this marathon);
+   setuptools backend with `[tool.setuptools.packages.find] include = ["xyz*"]`;
+   `[tool.pytest.ini_options] pythonpath = ["."]` and `testpaths = ["tests"]`.
+3. **`xyz/` package skeleton** (canonical Phase 0 step 2), modules only — docstrings and
+   `__version__`, no logic:
+   - `xyz/__init__.py` (`__version__ = "0.5.0.dev0"` — `validate.sh` asserts this exact string)
+   - `xyz/__main__.py` → `raise SystemExit(main())` from `xyz.cli`
+   - `xyz/ingest/__init__.py`, `xyz/index/__init__.py`, `xyz/retrieve/__init__.py`,
+     `xyz/eval/__init__.py`
+   - `xyz/cli.py`: `main(argv: list[str] | None = None) -> int` (argparse). `--version` prints the
+     version and returns 0; no arguments prints the subcommand list (`ingest`, `query`, `eval`, all
+     "not implemented until gh11-p4") and returns 0; an unknown subcommand returns 2.
+4. **`tests/`**: `tests/__init__.py`; `tests/test_smoke.py` asserting `xyz.__version__ ==
+   "0.5.0.dev0"`, `main([])` returns 0, `main(["--version"])` returns 0, `main(["bogus"])` returns 2.
+5. **`validate.sh`** already asserts everything above (package presence, exact version,
+   `python -m xyz --version`, pytest). Do not edit it in this phase unless a check is wrong — if so,
+   say exactly what and why in the relay.
 
 ## Non-goals
 
-No chunking, embedding, SQL or retrieval code in this phase. No changes to `.embed-tmp/`.
-Do not rewrite `AGENTS.md` (out of scope; parked).
+No chunking, embedding, SQL or retrieval code. No changes to `.embed-tmp/`. No `AGENTS.md`
+rewrite (parked). No `CHANGELOG.md` entry — the orchestrator writes it at PR time.
 
 ## Definition of done
 
-- `bash validate.sh` exits 0 and prints the `xyz` version from the import smoke.
-- `.venv/bin/python -m pytest -q tests` → 1 passed.
+- `bash validate.sh` exits 0 end to end.
 - `GUIDING-PRINCIPLES.md` contains both new principles and a repo-accurate Purpose; the eight
-  original principles are unchanged.
-- `./utils/pdda/pdda.sh governance` reports no new error (warnings allowed).
-- Red control: temporarily rename `xyz/__init__.py` and confirm `validate.sh` fails on the import
-  smoke; restore it. Record that you did this in your relay block.
+  original principles are unchanged; `./utils/pdda/pdda.sh governance` reports no new error.
+- Red control (do it, quote the output in the relay, then restore): change `__version__` to
+  `"0.0.0"` → `validate.sh` must fail at "import smoke (exact version)"; delete
+  `xyz/__main__.py` → it must fail at "package presence".
