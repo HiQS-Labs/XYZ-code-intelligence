@@ -176,4 +176,18 @@ Swept the whole plan, MARATHON.yaml, all five briefs, validate.sh and the newly 
 
 DoD disposition: 1 grounding passes within the stated evidence limits; 2 local completeness/deviation accounting retains prior support but the live issue was unavailable; 3 DRY, 4 dependency/allowlist/rollback and 7 rating pass at plan level. 5 consistent falsifiable checks and 6 enforced runtime readiness remain changes requested. This sweep includes newly introduced readiness defects and remaining pre-existing API contradictions. Round 3 / 3 is exhausted, so STATUS is Escalated, not Approved. Handing off to claude-a (Producer) — go to the Producer window and say 'take your turn' to resolve the findings and arrange the next review decision; do not launch on this verdict.
 
+## Producer — claude-a — Round 3 dispositions — 2026-09-06
+
+All four Round 3 findings implemented. Recording them here for the record; the relay is at its 3/3 cap and STATUS stays Escalated — the marathon was NOT launched, and whether to reopen for a round 4 is the operator's call, not mine.
+
+- [Blocker] Stale success marker / unvalidated config — **Implemented.** You were right that my own red-control run demonstrated the hole. `prelaunch.sh:24-30` now **deletes the marker before any check runs**, so a failed or interrupted attempt leaves none; success is published **atomically** (`tmp + os.replace`, :112-116) so a crash mid-write cannot leave a partial marker. The marker now records an `env` fingerprint (selected reranker, `HF_HOME`, `HF_HUB_CACHE`, `TRANSFORMERS_CACHE`, resolved hub dir) and `validate.sh:27-42` compares it against the live environment, failing with the exact drift and the re-run command. Three controls run, evidence in `.relay-scratch/prelaunch.json`:
+  1. success → failing `XYZ_RERANKER` retry → `marker present = no`, and validate fails `readiness marker missing`;
+  2. `XYZ_RERANKER=BAAI/bge-reranker-base` without re-prelaunch → `environment changed since prelaunch (validated, now): {"reranker": ["mixedbread-ai/mxbai-rerank-xsmall-v1", "BAAI/bge-reranker-base"]}`;
+  3. `HF_HOME=$TMPDIR/other-hf` → rejected on `HF_HOME` and `hf_hub_dir`.
+- [Should] τ contract vs test — **Implemented**, keeping the query-level rule as specified rather than changing the API. brief-p3 now separates the two concerns: a score-direction test (two-term match scores above one-term), and **two searches** for τ — (a) top score above τ → `no_answer=False` and the result **still contains the below-τ secondary hit** (explicitly asserted), (b) top score below τ → `no_answer=True`, `hits=[]`.
+- [Should] Scorer input cannot supply chunk ids — **Implemented.** `score()` now takes `dict[query -> list[tuple[chunk_id, path]]]`, matching what `SearchResult.ranking` already returns; relevance is judged on the `path` half only, ids are carried through serialization, and ids must never be fabricated from rank position. Added a round-trip test: two distinct `chunk_id`s sharing one `path` survive `score()` + JSON in order, so a same-path reorder stays visible.
+- [Nit] Stale status pointers — **Implemented.** The plan's `## Status` row and `## Run log` now carry all three rounds, the two defects the readiness control found, and the escalation state.
+
+Relay closed at the cap: **Escalated**, not Approved. Next action is the operator's — reopen for one more review round against these fixes, or accept the plan explicitly. No launch on this verdict.
+
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->

@@ -18,10 +18,30 @@ export XYZ_SCRATCH="${XYZ_SCRATCH:-$REPO/.relay-scratch}"
 mkdir -p "$XYZ_SCRATCH"
 MARKER="$(cd "$(dirname "$XYZ_PY")/.." && pwd)/xyz-prelaunch.json"
 
+# INVALIDATE FIRST (GH-11 plan review r3): a readiness attempt must never be able to fall back on a
+# previous success. The marker is removed before anything is tested and only re-published — atomically,
+# via a temp file + os.replace — when every check passes. So a failed or interrupted run leaves NO
+# marker, and validate.sh fails until a real success re-publishes one.
+rm -f "$MARKER"
+
 "$XYZ_PY" - "$MARKER" "$XYZ_SCRATCH/prelaunch.json" <<'PY'
 import hashlib, importlib, json, os, pathlib, sys, time
 marker, evidence = sys.argv[1], sys.argv[2]
-report = {"xyz_py": sys.executable, "python": sys.version.split()[0], "checks": {}, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+RERANKER = os.environ.get("XYZ_RERANKER", "mixedbread-ai/mxbai-rerank-xsmall-v1")
+
+def env_fingerprint():
+    """What this readiness run actually validated. validate.sh compares it to the live env, so a
+    changed reranker or model cache invalidates readiness instead of silently reusing it."""
+    return {
+        "reranker": RERANKER,
+        "HF_HOME": os.environ.get("HF_HOME", ""),
+        "HF_HUB_CACHE": os.environ.get("HF_HUB_CACHE", ""),
+        "TRANSFORMERS_CACHE": os.environ.get("TRANSFORMERS_CACHE", ""),
+        "hf_hub_dir": str(pathlib.Path(os.environ.get("HF_HOME", pathlib.Path.home() / ".cache/huggingface")) / "hub"),
+    }
+
+report = {"xyz_py": sys.executable, "python": sys.version.split()[0], "checks": {},
+          "env": env_fingerprint(), "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
 def fail(msg):
     report["ok"] = False; report["error"] = msg
     pathlib.Path(evidence).write_text(json.dumps(report, indent=2))
@@ -77,7 +97,6 @@ try:
     report["checks"]["CodeRankEmbed"] = {"shape": list(v.shape), "load_s": round(time.time() - t0, 1), "max_seq_length": m.max_seq_length}
 except Exception as e:
     fail(f"CodeRankEmbed offline load failed (incomplete cache?): {e!r}")
-RERANKER = os.environ.get("XYZ_RERANKER", "mixedbread-ai/mxbai-rerank-xsmall-v1")
 try:
     t0 = time.time(); ce = CrossEncoder(RERANKER, device="cpu", trust_remote_code=True)
     s = [float(x) for x in ce.predict([("sort a list in python", "def sort_list(lst):\n    return sorted(lst)"),
@@ -96,7 +115,11 @@ except Exception as e:
 
 report["ok"] = True
 pathlib.Path(evidence).write_text(json.dumps(report, indent=2))
-pathlib.Path(marker).write_text(json.dumps(report, indent=2))
+# Atomic publish: write beside the marker, then rename. A crash mid-write cannot leave a partial
+# marker that validate.sh would accept.
+tmp = pathlib.Path(marker + f".tmp.{os.getpid()}")
+tmp.write_text(json.dumps(report, indent=2))
+os.replace(tmp, marker)
 print(json.dumps(report, indent=2))
 print(f"prelaunch: READY — marker written to {marker}")
 PY

@@ -22,10 +22,24 @@ echo "== env preflight"
 MARKER="$(cd "$(dirname "$XYZ_PY")/.." && pwd)/xyz-prelaunch.json"
 [[ -f "$MARKER" ]] || { echo "validate: readiness marker missing: $MARKER — run: XYZ_PY=$XYZ_PY bash prelaunch.sh" >&2; exit 1; }
 "$XYZ_PY" - "$MARKER" <<'PY'
-import importlib, json, sys
+import importlib, json, os, pathlib, sys
 m = json.load(open(sys.argv[1]))
 if not m.get("ok"): sys.exit("validate: prelaunch marker records NOT READY — re-run prelaunch.sh")
 if m.get("xyz_py") != sys.executable: sys.exit(f"validate: prelaunch marker is for {m.get('xyz_py')}, not {sys.executable}")
+# The marker must have validated THIS configuration: the same reranker and the same model cache.
+# Otherwise a stale success would vouch for a model or cache that was never tested.
+live = {
+    "reranker": os.environ.get("XYZ_RERANKER", "mixedbread-ai/mxbai-rerank-xsmall-v1"),
+    "HF_HOME": os.environ.get("HF_HOME", ""),
+    "HF_HUB_CACHE": os.environ.get("HF_HUB_CACHE", ""),
+    "TRANSFORMERS_CACHE": os.environ.get("TRANSFORMERS_CACHE", ""),
+    "hf_hub_dir": str(pathlib.Path(os.environ.get("HF_HOME", pathlib.Path.home() / ".cache/huggingface")) / "hub"),
+}
+was = m.get("env") or {}
+drift = {k: (was.get(k), v) for k, v in live.items() if was.get(k) != v}
+if drift:
+    sys.exit("validate: environment changed since prelaunch (validated, now): "
+             + json.dumps(drift) + " — re-run: XYZ_PY=%s bash prelaunch.sh" % sys.executable)
 for mod in ("numpy", "sqlite_vec", "tree_sitter_language_pack", "sentence_transformers", "pytest"):
     importlib.import_module(mod)  # real import, not find_spec
 from tree_sitter_language_pack import get_parser

@@ -29,7 +29,7 @@
         2,
         768
       ],
-      "load_s": 2.4,
+      "load_s": 2.5,
       "max_seq_length": 2048
     },
     "reranker": {
@@ -38,9 +38,16 @@
         0.5972555875778198,
         0.017442485317587852
       ],
-      "load_s": 1.0
+      "load_s": 1.1
     }
   },
-  "at": "2026-09-06T20:33:41Z",
+  "env": {
+    "reranker": "mixedbread-ai/mxbai-rerank-xsmall-v1",
+    "HF_HOME": "",
+    "HF_HUB_CACHE": "",
+    "TRANSFORMERS_CACHE": "",
+    "hf_hub_dir": "/Users/noelsaw/.cache/huggingface/hub"
+  },
+  "at": "2026-09-06T20:38:36Z",
   "ok": true
 }

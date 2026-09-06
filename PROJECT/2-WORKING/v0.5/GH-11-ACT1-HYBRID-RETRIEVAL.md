@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Codex plan review round 1: 4 blockers + 5 shoulds all implemented in the briefs, gate and plan (2026-09-06). | Codex round 2; on Approved, fire `marathon.sh` on the five phases in order. |
+| Codex plan review rounds 1-3: 13 findings implemented; round 3's marker-invalidation blocker, τ contract and scorer-input fixes landed (2026-09-06). | **Blocked on operator decision:** the relay hit its 3-round cap at `STATUS: Escalated`, so the marathon must not fire. Extend the cap for a round-4 re-review, or accept the plan explicitly. |
 
 ## Observed problem
 
@@ -211,6 +211,22 @@ n/a (feature). No operator override.
   `marathon/gh11-act1-hybrid-retrieval-2026-09-05` off `origin/v0.5/embedding-eval-coderankembed-vs-gemini`
   (`3301124`, stacked: no PR exists for that branch yet). Venv provisioned, reranker pre-cached.
 - 2026-09-06 — preflight ready (exit 0), `marathon.sh --dry-run` OK (5 phases in order). Codex plan
-  review round 1 (`relay-system/2026-09-06/gh11-act1-plan-review.md`): changes requested — metric
-  depth, environment contract, subset fallback, red controls, grounding, chunk contract, deviation
-  accounting, containment, API defaults. All implemented; round 2 requested.
+  review (`relay-system/2026-09-06/gh11-act1-plan-review.md`), three rounds, 13 findings, all
+  implemented:
+  - **r1** — metric depth, environment contract, subset fallback, red controls, grounding, chunk
+    contract, deviation accounting, containment, API defaults.
+  - **r2** — vacuous readiness check, incomplete-walk pruning, rerank-tail policy + chunk-id
+    evidence, BM25 score direction, contradictory changed-token test. Implementing the readiness
+    control (`prelaunch.sh`) **found two real defects before any builder turn**: (1)
+    `tree_sitter_language_pack` downloads grammars at first use, so every offline turn would have
+    failed at the chunker — now pre-cached and asserted; (2) `cross-encoder/ms-marco-MiniLM-L-6-v2`
+    loads cleanly on torch 2.14.0 / transformers 5.16.1 and returns `[nan, nan]` — default reranker
+    changed to `mixedbread-ai/mxbai-rerank-xsmall-v1`.
+  - **r3** — readiness marker not invalidated on failure and not bound to the validated reranker /
+    cache (my own red-control run had left a stale success marker); τ specified as a query-level
+    decision, not a per-hit filter; scorer input takes `(chunk_id, path)` records so same-path
+    reorders survive. All fixed; `prelaunch.sh` now deletes the marker before testing and publishes
+    it atomically, and `validate.sh` rejects it when `XYZ_RERANKER` or the HF cache differs.
+  - **Round cap 3/3 exhausted → `STATUS: Escalated`.** Implementation is stopped pending an operator
+    decision: extend the cap for a round-4 re-review of the r3 fixes, or accept the plan explicitly.
+    The marathon was **not** fired.

@@ -47,15 +47,21 @@ do not guess a path.
 
 ## Task
 
-1. `xyz/eval/metrics.py` — `score(rankings: dict[query -> list[chunk_path_in_rank_order]],
-   queries, depth) -> Report` with the definitions above; ranks are **chunk ranks** (the first chunk
-   whose path is relevant; paths are not de-duplicated before ranking); JSON writer with keys `mrr,
+1. `xyz/eval/metrics.py` — `score(rankings: dict[query -> list[tuple[chunk_id, path]]], queries,
+   depth) -> Report`. The input is the ordered `(chunk_id, path)` records `SearchResult.ranking`
+   already returns (p3) — **never bare paths**, because two chunks of one file share a path and ids
+   cannot be recovered from it (and must never be fabricated from rank position). Relevance is
+   judged on the `path` half only; the `chunk_id` half is carried through to serialization. Ranks
+   are **chunk ranks** (the first chunk whose path is relevant; paths are not de-duplicated before
+   ranking); JSON writer with keys `mrr,
    recall@1, recall@3, recall@5, recall@10, never_found, depth, per_query`, where each `per_query`
    row carries `q, relevant, rank, top_hit` **and `ranking` — the ordered list of
    `{chunk_id, path}` objects up to `depth`** (chunk ids make same-path reorders visible).
    `score()` raises `ValueError` on an empty query list. Unit tests: a hand-built 3-query case; a
    case where the only relevant chunk sits at rank 11 with `depth=10` → miss, and with `depth=100`
-   → 1/11.
+   → 1/11; and a **round-trip** case where two distinct `chunk_id`s share one `path` — after
+   `score()` and JSON serialization both ids survive in order, so a same-path reorder is still
+   visible downstream.
 2. `xyz/cli.py` subcommands (argparse; `main(argv)` returns an int; `python -m xyz` works via
    `xyz/__main__.py` from p0):
    - `xyz ingest --db DB --repo NAME PATH [--include-prefix P ...]` → `Store.ingest`

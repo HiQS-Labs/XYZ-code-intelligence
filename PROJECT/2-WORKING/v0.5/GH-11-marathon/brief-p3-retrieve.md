@@ -86,8 +86,12 @@ Implement `xyz/retrieve/`:
      miniature);
    - `KNN_SQL` contains the literal ` k = ?` and does not contain `LIMIT ?`;
    - `"foo-bar: baz*"` and `""` do not raise in `bm25_search`;
-   - BM25 sign: a chunk matching two query terms scores higher than one matching one; a `tau`
-     between those two scores in `mode="bm25"` keeps the stronger hit and rejects the weaker one;
+   - BM25 sign (score direction only): a chunk matching two query terms scores higher than one
+     matching one;
+   - τ is a **query-level** decision, not a per-hit filter — two searches prove it: (a) top score
+     above τ → `no_answer=False` and the result **still contains the below-τ secondary hit**;
+     (b) a query whose top score falls below τ → `no_answer=True`, `hits=[]`. Same store, τ chosen
+     between the two candidates' scores in case (a);
    - `tau` above every score → `no_answer=True`, empty hits, non-empty `ranking`; `tau=None` never
      yields `no_answer` **when at least one candidate exists**; `mode="hybrid+rerank"` with no
      reranker raises; `mode="auto"` picks per the rule;
