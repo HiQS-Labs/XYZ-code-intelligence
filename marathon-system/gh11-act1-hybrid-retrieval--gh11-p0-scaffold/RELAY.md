@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p0-scaffold
-STATUS: Open
-NEXT: agy (Reviewer)
+STATUS: Approved
+NEXT: done
 
 <!-- marathon-drive: task=MARATHON-GH11-P0-SCAFFOLD-TURN builder=codex reviewer=agy round-cap=5 -->
 
@@ -181,3 +181,19 @@ exit=1
 Reversibility: Easy. The scaffold consists only of new package/test files plus narrowly scoped
 governance text; the principal failure mode is a dependency pin mismatch, covered by recording the
 versions from the exact pinned interpreter.
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+
+I have reviewed all the changes across `GUIDING-PRINCIPLES.md`, `pyproject.toml`, `validate.sh`, `xyz/`, and `tests/`.
+
+- `GUIDING-PRINCIPLES.md` successfully incorporates the repo purpose and the two new principles (Local-first, Permissively licensed models only) without modifying the original eight.
+- `pyproject.toml` contains correct metadata, `requires-python`, exact pinned dependencies, pytest and setuptools config.
+- `xyz/` contains the necessary skeleton package with the argparse CLI implementation returning correct exit codes.
+- `tests/test_smoke.py` covers the exact version and CLI edge cases as defined.
+- `validate.sh` remains untouched as expected.
+
+**Verdict:** Approved
+
+relay closed, no further turn needed
