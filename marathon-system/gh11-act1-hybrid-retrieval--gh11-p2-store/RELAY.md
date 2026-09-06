@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p2-store
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P2-STORE-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -163,3 +163,30 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Implemented the Phase 2 SQLite index writer and embedding contract.
+
+- Files touched: `xyz/index/embed.py`, `xyz/index/store.py`, `xyz/index/__init__.py`,
+  `tests/fakes.py`, and `tests/test_store.py`.
+- Added `Embedder` and the local `CodeRankEmbedder`: exact query-only prefix, injected model
+  factory, MPS/CPU selection, environment batch/thread controls, float32 L2 normalization, and the
+  explicit `max_seq_length = 2048` guard.
+- Added `Store` as the sole writer with WAL, foreign keys, provider-keyed metadata drift rejection,
+  external-content FTS5 triggers, vec0 rows keyed to chunk ids, provider-keyed embedding cache,
+  per-file transactions, complete-walk-before-mutation, file-SHA short-circuiting, scoped pruning,
+  stats, and FTS probes. Existing metadata is checked before schema mutation, and same-SHA misses
+  within a file are embedded only once.
+- Added deterministic `FakeEmbedder` plus focused coverage for first/unchanged/changed/deleted and
+  prefix-scoped ingests, empty and incomplete walks, all three mismatch fields, vec/cache equality,
+  and CodeRank construction/prefix behavior.
+- Verification: `"$XYZ_PY" -m pytest -q tests/test_store.py` → `12 passed in 0.85s`.
+- Real offline smoke: `encode_query("sort a list")` → shape `(768,)`, norm `1.0`, model
+  `max_seq_length == 2048`.
+- Red controls, each restored after proof: disabling the file-SHA short circuit failed the unchanged
+  ingest assertion (`files_skipped 0 != files_seen 7`); dropping `chunks_ai` after initial ingest
+  failed `fts_match("NEWTOKEN")` with `[]`; ignoring traversal errors failed because
+  `WalkIncomplete` was not raised. Logs are under `.relay-scratch/red-control-{a,b,c}.log`.
+
+**Verdict:** Ready for review
