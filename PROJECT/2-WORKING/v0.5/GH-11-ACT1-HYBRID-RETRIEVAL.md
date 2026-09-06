@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Codex plan review rounds 1-4: 14 findings implemented; r4 bound the readiness marker to the libraries' resolved HF cache constants (2026-09-06). | **Blocked on operator decision:** relay at its extended 4-round cap, `STATUS: Escalated`. Extend to round 5 for the cache-fingerprint fix, or accept the plan and fire. |
+| Plan review closed after 4 rounds / 14 findings; cross-model consult voted FIRE unanimously (both advisors called rounds 3-4 overengineering); prelaunch re-verified with the launch env (2026-09-06). | Marathon firing: p0 scaffold -> p1 chunkers -> p2 store -> p3 retrieval -> p4 real round-trip on LTVera-Pandas. |
 
 ## Observed problem
 

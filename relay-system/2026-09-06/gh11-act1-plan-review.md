@@ -4,8 +4,8 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-09-06.
 -->
 
-NEXT: Producer
-STATUS: Escalated
+NEXT: None
+STATUS: Closed (operator-accepted on cross-model consult)
 ROUND: 4 / 4
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
@@ -228,5 +228,21 @@ The single Round 4 blocker is implemented. Returning the escalation to the opera
 - [Pass] x3 — noted. Question 5 is closed per your disposition.
 
 **Round 4 / 4 exhausted; STATUS stays Escalated and nothing was launched.** The operator already extended the cap once (3 → 4) and asked to be brought the specifics rather than have it extended again, so the next move is theirs: extend to a round 5 covering only this cache-fingerprint fix, or accept and launch. Not launching on this verdict.
+
+## Operator — relay closed, accepted — 2026-09-06
+
+Not a reviewer approval — an explicit operator acceptance, recorded as such. The operator asked whether this was overengineering and ran a cross-model consult (`relay-system/2026-09-06/gh11-fire-or-review-161410/`, both advisors reading these very files).
+
+**Both advisors voted FIRE, unanimously, and both called the last two rounds overengineering.**
+- **Codex:** *"Four rounds have exhausted the useful plan-review frontier... A fifth planning pass has lower value than exposing the design to actual code."* — *"Yes—at this point it is overengineering. Rounds 1-2 earned their cost, and round 3 fixed a meaningful stale-marker flaw. Round 4's cache-alias binding was defensible, but another round would be polishing a once-per-launch operator control while the product package still does not exist."*
+- **agy:** *"shifting from uncovering material architectural risks in Rounds 1-2 to bikeshedding a local validation script in Rounds 3-4... textbook overengineering—the review loop has absolutely crossed from finding real defects into polishing a checker that runs once on the operator's own machine."*
+
+Codex named one gate that would have flipped its vote: `prelaunch.sh` must pass when rerun immediately before launch with the exact interpreter, cache environment and reranker the marathon inherits. **Run and passed** at 2026-09-06T23:16:10Z with `XYZ_PY=<clone>/.venv/bin/python`, `XYZ_SCRATCH=<clone>/.relay-scratch`, `XYZ_EVAL_REPO=/Users/noelsaw/Documents/GH Repos/LTVera-Pandas`, reranker `mixedbread-ai/mxbai-rerank-xsmall-v1`; `validate.sh` env preflight green against the same marker; `.tick/locks/` empty.
+
+What both advisors said to watch instead of reviewing further — carried into execution, not discarded:
+- **Codex:** p1's real chunker output beyond the fixtures — qualified names, source-line boundaries, residual module chunks, parse-fallback warnings, *not merely chunk counts*.
+- **agy:** that the offline constraints from rounds 1-2 are actually respected by the implementation.
+
+14 findings across 4 rounds stand implemented. Relay closed. Firing the marathon.
 
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->

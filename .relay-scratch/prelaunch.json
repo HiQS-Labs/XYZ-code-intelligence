@@ -29,7 +29,7 @@
         2,
         768
       ],
-      "load_s": 2.4,
+      "load_s": 3.1,
       "max_seq_length": 2048
     },
     "reranker": {
@@ -38,7 +38,7 @@
         0.5972555875778198,
         0.017442485317587852
       ],
-      "load_s": 0.8
+      "load_s": 1.2
     }
   },
   "env": {
@@ -49,6 +49,6 @@
     "transformers_cache": "/Users/noelsaw/.cache/huggingface/modules",
     "hf_modules_cache": "/Users/noelsaw/.cache/huggingface/modules"
   },
-  "at": "2026-09-06T22:57:26Z",
+  "at": "2026-09-06T23:16:10Z",
   "ok": true
 }
