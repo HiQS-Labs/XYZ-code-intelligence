@@ -125,6 +125,11 @@ No query path (p3), no CLI (p4). No real model in pytest.
   subdirectory's rows get pruned.
 
 
+## Debug mantra (auto-triggered — 1 prior attempt(s) on this phase did not reach Approved)
+
+Before trying again, read `relay-automation/DEBUG-MANTRA.md` (relative to the harness root) and follow its four-step discipline: reproduce reliably, know the fail path, question the hypothesis, treat this round as a breadcrumb for the next one.
+Last recorded reason (`marathon-system/gh11-act1-hybrid-retrieval--gh11-p2-store/ESCALATION.md`): `relay-failed-before-gate`. Read it before re-guessing.
+
 ---
 
 ▶ TAKE YOUR TURN (codex — BUILDER role)
@@ -163,59 +168,3 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
-
-### Round 1 · Builder · codex
-
-Implemented the Phase 2 SQLite index writer and embedding contract.
-
-- Files touched: `xyz/index/embed.py`, `xyz/index/store.py`, `xyz/index/__init__.py`,
-  `tests/fakes.py`, and `tests/test_store.py`.
-- Added `Embedder` and the local `CodeRankEmbedder`: exact query-only prefix, injected model
-  factory, MPS/CPU selection, environment batch/thread controls, float32 L2 normalization, and the
-  explicit `max_seq_length = 2048` guard.
-- Added `Store` as the sole writer with WAL, foreign keys, provider-keyed metadata drift rejection,
-  external-content FTS5 triggers, vec0 rows keyed to chunk ids, provider-keyed embedding cache,
-  per-file transactions, complete-walk-before-mutation, file-SHA short-circuiting, scoped pruning,
-  stats, and FTS probes. Existing metadata is checked before schema mutation, and same-SHA misses
-  within a file are embedded only once.
-- Added deterministic `FakeEmbedder` plus focused coverage for first/unchanged/changed/deleted and
-  prefix-scoped ingests, empty and incomplete walks, all three mismatch fields, vec/cache equality,
-  and CodeRank construction/prefix behavior.
-- Verification: `"$XYZ_PY" -m pytest -q tests/test_store.py` → `12 passed in 0.85s`.
-- Real offline smoke: `encode_query("sort a list")` → shape `(768,)`, norm `1.0`, model
-  `max_seq_length == 2048`.
-- Red controls, each restored after proof: disabling the file-SHA short circuit failed the unchanged
-  ingest assertion (`files_skipped 0 != files_seen 7`); dropping `chunks_ai` after initial ingest
-  failed `fts_match("NEWTOKEN")` with `[]`; ignoring traversal errors failed because
-  `WalkIncomplete` was not raised. Logs are under `.relay-scratch/red-control-{a,b,c}.log`.
-
-**Verdict:** Ready for review
-
-### Round 1 · Reviewer · agy
-
-swept file: yes
-The implementation in `xyz/index/store.py`, `xyz/index/embed.py`, and `tests/test_store.py` is excellent, correct, and passes the test suite properly (verified locally).
-However, it appears your previous turn inadvertently created duplicated nested directories in the workspace: `xyz/xyz/` and `tests/tests/` (likely due to a recursive `cp` command mistake).
-Please run `rm -rf xyz/xyz tests/tests` to remove these unintended nested copies. Do not run `git` yourself; the harness will stage the removals when you hand off the token.
-
-**Verdict:** Changes requested
-
-handing off to codex — codex, take your turn
-
-
-### Orchestrator note — 2026-09-06
-
-agy's Round 1 review was correct: the builder's turn had left duplicated nested trees `xyz/xyz/` and
-`tests/tests/` from a bad recursive copy. The follow-up **builder** turn never ran — `agy -p` returned
-exit 0 with empty output (blocked backend), so relay-drive failed the turn before the gate and the
-phase escalated (`ESCALATION.md`, reason `relay-failed-before-gate`, gate `not-run`). agy responds
-normally again now, so that failure was transient infrastructure, not a substantive review outcome.
-
-Rather than leave the phase stranded, the orchestrator applied the reviewer's **verbatim** requested
-change and nothing else: `rm -rf xyz/xyz tests/tests`. This is recorded rather than done silently
-because it is builder work done outside a builder turn. It is a deletion of accidental duplicates —
-no source was written or modified. Evidence after the deletion: `bash validate.sh` → `27 passed`,
-`validate: OK` (the earlier 46 counted the duplicated copies of the same tests).
-
-Re-firing the plan so codex and agy still close this phase through the normal loop; p0 and p1 are
-Approved and their lanes are already satisfied.
