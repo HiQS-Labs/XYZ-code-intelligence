@@ -51,6 +51,11 @@ Implement `xyz/ingest/`:
    `*.blade.php`, `.env.example`. `DEFAULT_EXCLUDE` = `.git .venv node_modules __pycache__ dist build
    temp .embed-tmp .xyz .relay-scratch marathon-system relay-system`. Skip files > 1 MiB and binary
    files (NUL byte in the first 8 KiB). `root` must be an existing directory → else `ValueError`.
+   **Traversal errors are not exclusions:** an `OSError` from directory enumeration or from reading
+   a candidate file is appended to `errors` (a caller-supplied `list[str]`, required argument) with
+   the path, and the walk continues; skips by extension, size, binary sniff, `exclude_dirs` or
+   `include_prefixes` are intentional and are **not** recorded there. Callers that mutate an index
+   (p2 `Store.ingest`) must treat a non-empty `errors` as an incomplete walk and refuse to prune.
 2. `xyz/ingest/chunk.py` — a `Chunk` dataclass: `repo, path, kind, qualified_name, start_line,
    end_line, text, embedded_text, content_sha` (`content_sha` = sha256 of `embedded_text`), and
    `ChunkResult(chunks: list[Chunk], warnings: list[str])`. `embedded_text` **always begins with the
@@ -83,7 +88,10 @@ Implement `xyz/ingest/`:
    (#2); binary and `node_modules` produce none; both oversize cases split with suffixes and ≤ 6,000
    chars each; the broken file yields a file-level chunk plus one warning; `include_prefixes`
    restricts the walk without altering `rel_path`; a missing root raises; output is deterministic
-   (two runs equal).
+   (two runs equal); with `os.scandir` monkeypatched to raise `PermissionError` for one subdirectory
+   **after** at least one file was yielded, the walk still yields the other files and `errors` has
+   exactly one entry naming that subdirectory, while an excluded dir or a binary skip adds nothing
+   to `errors`.
 
 ## Non-goals
 

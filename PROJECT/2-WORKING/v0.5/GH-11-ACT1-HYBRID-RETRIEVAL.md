@@ -135,9 +135,13 @@ Canonical writer for the index is `xyz/index/store.py` — one SQLite file per i
   `XYZ_PY` (interpreter with the pinned deps; default `<repo>/.venv/bin/python`), `XYZ_SCRATCH`
   (generated evidence; default `<repo>/.relay-scratch`, the harness's swept scratch dir — nothing
   goes under `temp/`), `XYZ_EVAL_REPO` (absolute path to the LTVera-Pandas checkout; p4 fails fast if
-  unset), `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1`. `validate.sh`'s env preflight checks the
-  interpreter, the modules, both cached models and FTS5 before anything else, so a turn cannot start
-  on an unprovisioned tree. No `pip install` and no editable install inside a turn (the latter
+  unset), `HF_HUB_OFFLINE=1` / `TRANSFORMERS_OFFLINE=1`. Readiness is a two-step control:
+  **`prelaunch.sh`** (operator, before firing) really imports every dependency, instantiates the five
+  Tree-sitter parsers and loads both models offline with their real classes (encode + predict) using
+  the exact `XYZ_PY`, then writes `<venv>/xyz-prelaunch.json`; **`validate.sh`** (every phase)
+  requires that marker for the same interpreter and repeats the cheap checks (real imports, parser
+  creation, FTS5/vec0). Red controls for the operator step: run `prelaunch.sh` with `HF_HOME` pointed
+  at an empty directory → NOT READY on CodeRankEmbed; with a bogus `XYZ_PY` → not executable. No `pip install` and no editable install inside a turn (the latter
   writes `*.egg-info/` into the tree); `PYTHONPATH=<repo>` makes `xyz` importable.
 - Risk — p4 embedding time: ~5,100+ chunks at ~0.3 s/chunk on MPS ≈ 25-35 min; the turn timeout is
   7200 s. The CLI prints an ETA after 200 chunks; > 45 min triggers the fallback: a **fresh** DB
@@ -145,9 +149,14 @@ Canonical writer for the index is `xyz/index/store.py` — one SQLite file per i
   label lives there), labelled `corpus: subset` wherever reported.
 - Containment: `CHANGELOG.md` is not on any phase allowlist by design — the orchestrator writes the
   end-of-iteration entry when opening the PR (AGENTS.md §7).
-- Risk — reranker choice is a placeholder: `cross-encoder/ms-marco-MiniLM-L-6-v2` is general-domain.
-  It is configurable; the bake-off (Phase 3) picks the real one. The p3 gate tests behaviour with a
-  fake reranker so the placeholder cannot make the gate flaky.
+- Risk — reranker choice is a placeholder: `mixedbread-ai/mxbai-rerank-xsmall-v1` (Apache-2.0,
+  ~70 MB) is general-domain and configurable via `XYZ_RERANKER`; the bake-off (Phase 3) picks the
+  real one, and the p3 gate tests behaviour with a fake reranker so the placeholder cannot make the
+  gate flaky. **Changed 2026-09-06:** the original choice `cross-encoder/ms-marco-MiniLM-L-6-v2`
+  loads cleanly on this stack (torch 2.14.0 / transformers 5.16.1) but returns `[nan, nan]` — an
+  old-format BERT checkpoint, reproduced with plain `AutoModelForSequenceClassification` under both
+  `eager` and `sdpa`. Found by `prelaunch.sh` before the marathon fired; `prelaunch.sh` now asserts
+  finite *and* correctly-ordered scores. Fallback: `BAAI/bge-reranker-base` (MIT, also verified).
 - Reversibility: **Easy** — all new files under `xyz/`, `tests/`, `pyproject.toml`, `validate.sh`;
   one small edit to `GUIDING-PRINCIPLES.md`; nothing in `.embed-tmp` changes. Revert = drop the branch.
 

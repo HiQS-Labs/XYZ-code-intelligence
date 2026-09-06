@@ -31,18 +31,30 @@ Environment contract: see `brief-p0-scaffold.md` (`XYZ_PY`, `XYZ_SCRATCH`, offli
 - FTS5 ranking: the built-in `bm25()` function (lower = better) via `ORDER BY bm25(chunks_fts)`.
   Sanitise the query for FTS5 syntax (quote tokens; strip operators) so a query containing `-` or
   `:` cannot raise; an all-stopword/empty sanitised query returns no BM25 hits, not an error.
-- Reranker default: `cross-encoder/ms-marco-MiniLM-L-6-v2` (Apache-2.0, in the HF cache, loaded via
-  `sentence_transformers.CrossEncoder`). It is a placeholder — keep it injectable.
+- Reranker default: **`mixedbread-ai/mxbai-rerank-xsmall-v1`** (Apache-2.0, ~70 MB, in the HF cache,
+  loaded via `sentence_transformers.CrossEncoder(..., trust_remote_code=True)`), read from
+  `XYZ_RERANKER` with that default. It is a placeholder — keep it injectable; the bake-off
+  (canonical Phase 3) picks the real one. Fallback if it misbehaves: `BAAI/bge-reranker-base` (MIT,
+  also cached and verified).
+  **Do not use `cross-encoder/ms-marco-MiniLM-L-6-v2`** — measured 2026-09-06 on this stack
+  (torch 2.14.0, transformers 5.16.1): it loads without error and returns **`[nan, nan]`** logits
+  (old-format BERT checkpoint; reproduced with plain `AutoModelForSequenceClassification` under both
+  `eager` and `sdpa` attention, checkpoint tensors all finite). `prelaunch.sh` now asserts the
+  reranker's scores are finite *and* rank a code snippet above unrelated SQL, so this cannot pass
+  silently again.
 
 ## Task
 
 Implement `xyz/retrieve/`:
 
+   **Score contract for every lane and stage: higher is better.**
 1. `xyz/retrieve/lexical.py` — `bm25_search(store, query, k) -> list[Hit]` (`Hit`: `chunk_id,
-   score, stage`), with the FTS5 sanitiser and its unit tests.
+   score, stage`) with **`score = -bm25(chunks_fts)`** (FTS5's bm25 is lower-is-better; negate it),
+   the FTS5 sanitiser, and unit tests including one where a chunk with more query-term matches gets
+   the higher `score`.
 2. `xyz/retrieve/dense.py` — `dense_search(store, query_vec, k) -> list[Hit]` using `vec0` with
-   `k = ?`; `score` = the vec0 distance negated (document this); expose the SQL string as a module
-   constant `KNN_SQL` so the test can assert on it.
+   `k = ?`; `score = -distance`; expose the SQL string as a module constant `KNN_SQL` so the test can
+   assert on it.
 3. `xyz/retrieve/fuse.py` — `rrf(rankings: list[list[Hit]], k=60) -> list[Hit]`:
    `score = Σ 1 / (k + rank_i)`; deterministic tie-break by `chunk_id`.
 4. `xyz/retrieve/rerank.py` — a `Reranker` protocol (`score(query, texts) -> list[float]`),
@@ -54,13 +66,16 @@ Implement `xyz/retrieve/`:
      `mode ∈ auto | dense | bm25 | hybrid | hybrid+rerank`; `auto` resolves to `hybrid+rerank` when a
      reranker is present else `hybrid`; an explicit `hybrid` never reranks; `hybrid+rerank` without
      a reranker raises `ValueError`;
-   - dense and BM25 each fetch `fetch_k`; RRF fuses; in `hybrid+rerank` the reranker rescores the
-     fused top `min(fetch_k, 50)` and reorders by its score; the top `k` are returned with chunk
-     rows, and `SearchResult.ranking` carries the **full ordered candidate list of chunk ids** (up to
-     `fetch_k`) so callers can compute ranks beyond `k`;
+   - **Candidate policy (explicit, tested):** dense and BM25 each fetch `fetch_k`; their union is
+     fused by RRF and **truncated to `fetch_k`** (the depth `D`); in `hybrid+rerank` the reranker
+     rescores only the first `min(D, 50)` of that list and reorders **them**; the remaining tail
+     (positions 51..D) is **appended unchanged in RRF order** — reranker scores are never compared
+     with RRF scores. `SearchResult.ranking` is the resulting ordered list of `(chunk_id, path)`
+     pairs of length ≤ D; the top `k` are returned with chunk rows;
    - `tau` semantics per mode: compared against the top reranker score in `hybrid+rerank`, the top
-     RRF score in `hybrid`, the top lane score in `dense` / `bm25`; below it → `no_answer=True`,
-     `hits=[]`, `ranking` still populated. An empty candidate set is `no_answer=True` regardless of τ;
+     RRF score in `hybrid`, the top lane score in `dense` / `bm25` (all higher-is-better); below it
+     → `no_answer=True`, `hits=[]`, `ranking` still populated. An empty candidate set is
+     `no_answer=True` regardless of τ;
    - `SearchResult.timings` = per-stage milliseconds (`embed_query, bm25, dense, fuse, rerank,
      total`; stages not run report 0.0).
    - `xyz/retrieve/latency.py` — `LatencyLog` collecting `timings` and reporting p50 / p95 per stage.
@@ -71,8 +86,16 @@ Implement `xyz/retrieve/`:
      miniature);
    - `KNN_SQL` contains the literal ` k = ?` and does not contain `LIMIT ?`;
    - `"foo-bar: baz*"` and `""` do not raise in `bm25_search`;
+   - BM25 sign: a chunk matching two query terms scores higher than one matching one; a `tau`
+     between those two scores in `mode="bm25"` keeps the stronger hit and rejects the weaker one;
    - `tau` above every score → `no_answer=True`, empty hits, non-empty `ranking`; `tau=None` never
-     does; `mode="hybrid+rerank"` with no reranker raises; `mode="auto"` picks per the rule;
+     yields `no_answer` **when at least one candidate exists**; `mode="hybrid+rerank"` with no
+     reranker raises; `mode="auto"` picks per the rule;
+   - candidate policy on a fixture large enough that the two-lane union exceeds `fetch_k`
+     (generate ≥ 120 small chunks): `ranking` has exactly `fetch_k` entries; a chunk placed at RRF
+     position 75 with `fetch_k=100` is present at position 75 after `hybrid+rerank` (tail untouched)
+     and absent with `fetch_k=50`; with `FakeReranker` swapping two chunks **of the same path**, the
+     two `ranking` lists differ by chunk id even though their path sequences are identical;
    - `Retriever(store, FakeEmbedder(model_id="other"))` raises `IndexMismatch` (and likewise for
      `dim`, `provider`);
    - every `timings` key present and ≥ 0; `LatencyLog` p50/p95 over ≥ 3 searches.
@@ -85,7 +108,8 @@ genuinely needed (say so in the relay).
 ## Definition of done
 
 - `bash validate.sh` green; every test above present and passing.
-- One real smoke, out of pytest, offline env: `CrossEncoderReranker().score("sort a list",
-  ["def sort_list(lst): return sorted(lst)", "SELECT 1"])` → two floats, the code snippet higher;
-  quote them.
+- One real smoke, out of pytest, offline env: `CrossEncoderReranker().score("sort a list in python",
+  ["def sort_list(lst):\n    return sorted(lst)", "SELECT 1 FROM dual"])` → two **finite** floats
+  with the code snippet higher (expected ≈ 0.597 vs 0.017 for the default model); quote them. A NaN
+  here is a hard stop, not a warning.
 - Red control: swap `k = ?` for `LIMIT ?` in `dense.py`, confirm the `KNN_SQL` test fails, restore.

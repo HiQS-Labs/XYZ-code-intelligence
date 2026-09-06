@@ -51,7 +51,8 @@ do not guess a path.
    queries, depth) -> Report` with the definitions above; ranks are **chunk ranks** (the first chunk
    whose path is relevant; paths are not de-duplicated before ranking); JSON writer with keys `mrr,
    recall@1, recall@3, recall@5, recall@10, never_found, depth, per_query`, where each `per_query`
-   row carries `q, relevant, rank, top_hit` **and `ranking` (the ordered paths up to `depth`)**.
+   row carries `q, relevant, rank, top_hit` **and `ranking` — the ordered list of
+   `{chunk_id, path}` objects up to `depth`** (chunk ids make same-path reorders visible).
    `score()` raises `ValueError` on an empty query list. Unit tests: a hand-built 3-query case; a
    case where the only relevant chunk sits at rank 11 with `depth=10` → miss, and with `depth=100`
    → 1/11.
@@ -68,7 +69,8 @@ do not guess a path.
      exists in `chunks.path`** (else exit 2 listing the missing paths); run every mode; write one
      report per mode plus `latency` (p50/p95 per stage per mode) and `corpus` (chunk count, file
      count, `include_prefixes` used, DB path); print a comparison table and the **reorder count**:
-     the number of queries whose top-10 `ranking` differs between `hybrid` and `hybrid+rerank`.
+     the number of queries whose top-10 `ranking` **chunk-id sequence** differs between `hybrid` and
+     `hybrid+rerank` (unit-tested with a fake reranker that swaps two chunks of one path → counted).
    CLI tests in `tests/test_cli.py` with the fakes on the fixture tree: ingest → query → eval end to
    end; ingest twice shows `chunks_embedded == 0`; an empty query file → exit 2; a query file with a
    gold path absent from the corpus → exit 2; a bogus `PATH` → exit 2.

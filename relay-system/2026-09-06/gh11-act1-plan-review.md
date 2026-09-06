@@ -4,9 +4,9 @@
   Scaffolded by relay-automation/new-relay.sh on 2026-09-06.
 -->
 
-NEXT: Producer
+NEXT: Reviewer
 STATUS: Open
-ROUND: 2 / 3
+ROUND: 3 / 3
 
 ## ▶ TAKE YOUR TURN — read this first (works for ANY agent: Claude, Codex, agy)
 1. **Read this whole file** (header, Setup, Ground rules, every block in the Log).
@@ -142,5 +142,20 @@ Uses Round 1 citation shorthand (`plan`, `p0`–`p4`, `canonical`).
 - [Pass] **Several falsification and fallback fixes are concrete.** `validate.sh:43-54` unconditionally checks package presence, exact version and pytest; p2:80-82 separately asserts file skips and writes; p4:55-57,73-74 rejects empty queries and tests rank 11 at two depths; p4:36-39 uses a same-depth dense baseline rather than Run 9. p1 Task 1 preserves root-relative prefixes and p4:80-83 uses one fresh subset DB; every label in `.embed-tmp/eval/queries-LTVera-Pandas.json` lies under scripts/app/alembic. p4:77-79 supplies a measured ETA trigger and p4:105 requires a <30-second re-ingest. Runtime feasibility is conditional on the readiness fix above; no actual model/corpus run was attempted here.
 
 DoD disposition: 1 grounding passes with stated historical-evidence limits; 2 completeness/deviations passes at plan level; 3 DRY and 4 dependency/allowlist/rollback pass; 5 falsifiable checks and 6 executable runtime readiness remain changes requested; 7 rating rationale passes. Producer should disposition all five open findings and request round 3 after revising the artifacts. Handing off to claude-a (Producer) — go to the Producer window and say 'take your turn'.
+
+## Producer — claude-a — Round 3 — 2026-09-06
+
+Dispositions for all five open Round 2 findings. Two of them found real defects when I implemented the control — details below.
+
+- [Blocker] Vacuous offline readiness — **Implemented, and it immediately caught two real defects.** Added `prelaunch.sh`: an operator-run readiness control that really imports every dependency, instantiates the Python/JS/TS/TSX/PHP parsers **and asserts the grammars are already cached** (`downloaded_languages()`), and loads **both models offline with their real classes**, then writes `<venv>/xyz-prelaunch.json`. `validate.sh:20-36` now requires that marker for the same interpreter and repeats the cheap parts as real imports + parser creation (no more `find_spec`/directory-existence). Defects it found before any builder turn:
+  1. `tree_sitter_language_pack` **downloads grammars at first use** (cache `~/Library/Caches/tree-sitter-language-pack`) — every builder turn would have failed offline. Grammars are now pre-cached and the check asserts it; red control: `HF_HOME=<empty>` → NOT READY.
+  2. `cross-encoder/ms-marco-MiniLM-L-6-v2` loads without error on this stack (torch 2.14.0, transformers 5.16.1) and returns **`[nan, nan]`** — reproduced with plain `AutoModelForSequenceClassification` under both `eager` and `sdpa`, checkpoint tensors all finite; it is an old-format BERT checkpoint. A shape-only assertion passed it, exactly as you predicted. Default reranker changed to **`mixedbread-ai/mxbai-rerank-xsmall-v1`** (Apache-2.0, ~70 MB; verified 0.5973 vs 0.0174 on the code-vs-SQL pair), fallback `BAAI/bge-reranker-base` (MIT, verified 0.9155 vs 0.0614), both overridable via `XYZ_RERANKER`. `prelaunch.sh` now asserts scores are **finite and correctly ordered**; red control: `XYZ_RERANKER=cross-encoder/ms-marco-MiniLM-L-6-v2 bash prelaunch.sh` → `NOT READY - non-finite scores [nan, nan]`. Evidence goes to `$XYZ_SCRATCH/prelaunch.json`.
+- [Blocker] Incomplete-walk pruning — **Implemented.** p1 `walk_repo` takes a required `errors: list[str]`; `OSError` from enumeration or read is appended and the walk continues, while extension/size/binary/`exclude_dirs`/`include_prefixes` skips are **not** recorded (intentional exclusions are distinguished from errors). p2 `Store.ingest` now walks to completion **before any write or delete** and raises `EmptyCorpus` (zero files) or `WalkIncomplete` (any error) up front. Tests added: `os.scandir` monkeypatched to raise `PermissionError` for one subdirectory after files were yielded → p1 keeps yielding and records exactly one error while excluded/binary skips record none; p2 raises `WalkIncomplete` and every pre-existing chunks/FTS/vec/files row survives (verified by counts and `fts_match` of a token from the unreadable subtree). Red control (c): ignore `errors` → the surviving-rows test fails.
+- [Should] Rerank tail / chunk-level evidence — **Implemented.** p3 now fixes the policy: fuse → truncate to D (`fetch_k`) → rerank the first `min(D, 50)` → **append the untouched tail in RRF order**; reranker scores are never compared against RRF scores. `SearchResult.ranking` is an ordered list of `(chunk_id, path)` of length ≤ D. p4 `per_query.ranking` stores `{chunk_id, path}` objects and the reorder count compares **chunk-id sequences**. Tests: a ≥120-chunk fixture so the union exceeds `fetch_k`; a chunk at RRF position 75 stays at 75 with `fetch_k=100` and is absent with `fetch_k=50`; a fake reranker swapping two chunks **of the same path** makes the two rankings differ by id while path sequences are identical (and is counted as a reorder).
+- [Should] BM25 threshold direction — **Implemented.** Score contract is now stated once for every lane and stage: **higher is better**, with `bm25_search` returning `score = -bm25(chunks_fts)` alongside dense's `-distance`. Tests: a chunk matching two query terms scores above one matching one, and a tau between them keeps the stronger and rejects the weaker in `mode="bm25"`. The tau assertion is qualified as you asked: `tau=None` never yields no-answer **when at least one candidate exists**, while an empty candidate set is no-answer regardless of tau.
+- [Should] Contradictory changed-token test — **Implemented.** The edit is now a **replacement** (`OLDTOKEN` → `NEWTOKEN` in exactly one chunk, that file's other chunks byte-identical), so `fts_match("NEWTOKEN")` non-empty and `fts_match("OLDTOKEN")` empty are both correct, and the untouched chunks still prove the cache-hit path. Trigger-disabled red control retained.
+- [Pass] x3 — noted; no change.
+
+Round 3 requested: re-check questions 5 (falsifiable checks) and 6 (executable runtime readiness), which you left open, against `prelaunch.sh`, `validate.sh:18-36`, brief-p1 Task 1 + tests, brief-p2 Task 2 + tests, brief-p3 Task 1/5 + tests, brief-p4 Task 1/2. Handing off to codex (Reviewer) - codex, take your turn.
 
 <!-- ↓↓↓ NEXT TURN goes here (append above nothing — this marker stays last) ↓↓↓ -->

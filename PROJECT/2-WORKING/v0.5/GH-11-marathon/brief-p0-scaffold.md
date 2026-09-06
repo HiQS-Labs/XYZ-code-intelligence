@@ -35,9 +35,16 @@ Canonical doc: `PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical 
 Rules: run Python only as `"$XYZ_PY"`; **no `pip install`**, no editable install (it writes
 `*.egg-info/` into the tree, an off-lane write) — the package is imported from the tree via
 `PYTHONPATH=<repo>` which `validate.sh` sets and `pyproject.toml` mirrors for pytest; write scratch
-only under `$XYZ_SCRATCH`. Before starting, run `bash validate.sh` once: its `env preflight` section
-must pass (interpreter, modules, both cached models, FTS5); the later sections are expected to fail
-until this phase is done.
+only under `$XYZ_SCRATCH`.
+
+Readiness is **proven before the marathon fires**, not assumed: the operator runs `prelaunch.sh`
+with the same `XYZ_PY`, which really imports every dependency, instantiates the Python / JS / TS /
+TSX / PHP parsers, and loads **both models offline with their real classes** (encode + predict),
+then writes `<venv>/xyz-prelaunch.json`. `validate.sh`'s `env preflight` requires that marker (for
+this exact interpreter) and re-does the cheap parts (real imports, parser creation, FTS5/vec0). If
+the marker is missing or names another interpreter, the gate fails with the command to run — do not
+work around it. Before starting, run `bash validate.sh` once: `env preflight` must pass; the later
+sections are expected to fail until this phase is done.
 
 ## Task
 

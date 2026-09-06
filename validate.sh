@@ -17,20 +17,24 @@ EXPECTED_VERSION="0.5.0.dev0"
 
 echo "== env preflight"
 [[ -x "$XYZ_PY" ]] || { echo "validate: XYZ_PY not executable: $XYZ_PY — create the venv per SOP.md or export XYZ_PY" >&2; exit 1; }
-"$XYZ_PY" - <<'PY'
-import importlib, os, pathlib, sys
-missing = [m for m in ("numpy", "sqlite_vec", "tree_sitter", "tree_sitter_language_pack",
-                       "sentence_transformers", "pytest") if importlib.util.find_spec(m) is None]
-if missing:
-    sys.exit(f"validate: missing modules in XYZ_PY: {missing}")
-hub = pathlib.Path(os.environ.get("HF_HOME", pathlib.Path.home() / ".cache/huggingface")) / "hub"
-for m in ("models--nomic-ai--CodeRankEmbed", "models--cross-encoder--ms-marco-MiniLM-L-6-v2"):
-    if not (hub / m).is_dir():
-        sys.exit(f"validate: model not in HF cache (offline turns cannot download it): {m}")
+# Readiness is proven by prelaunch.sh (operator-run: real offline model loads + parser creation with
+# this exact interpreter). Its marker must exist next to the venv and name this interpreter.
+MARKER="$(cd "$(dirname "$XYZ_PY")/.." && pwd)/xyz-prelaunch.json"
+[[ -f "$MARKER" ]] || { echo "validate: readiness marker missing: $MARKER — run: XYZ_PY=$XYZ_PY bash prelaunch.sh" >&2; exit 1; }
+"$XYZ_PY" - "$MARKER" <<'PY'
+import importlib, json, sys
+m = json.load(open(sys.argv[1]))
+if not m.get("ok"): sys.exit("validate: prelaunch marker records NOT READY — re-run prelaunch.sh")
+if m.get("xyz_py") != sys.executable: sys.exit(f"validate: prelaunch marker is for {m.get('xyz_py')}, not {sys.executable}")
+for mod in ("numpy", "sqlite_vec", "tree_sitter_language_pack", "sentence_transformers", "pytest"):
+    importlib.import_module(mod)  # real import, not find_spec
+from tree_sitter_language_pack import get_parser
+for lang in ("python", "javascript", "typescript", "tsx", "php"):
+    get_parser(lang)
 import sqlite3, sqlite_vec
 c = sqlite3.connect(":memory:"); c.enable_load_extension(True); sqlite_vec.load(c)
 assert c.execute("select sqlite_compileoption_used('ENABLE_FTS5')").fetchone()[0] == 1, "FTS5 missing"
-print("env ok:", sys.version.split()[0], "sqlite-vec", c.execute("select vec_version()").fetchone()[0])
+print("env ok:", sys.version.split()[0], "prelaunch", m["at"], "sqlite-vec", c.execute("select vec_version()").fetchone()[0])
 PY
 mkdir -p "$XYZ_SCRATCH"
 

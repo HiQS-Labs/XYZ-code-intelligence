@@ -61,8 +61,11 @@ Implement `xyz/index/`:
      existing DB raises `IndexMismatch` naming the differing field if **any** of `model`, `dim`,
      `provider` differ. `Store.check_embedder(embedder)` exposes the same check for readers (p3).
    - `Store.ingest(repo, root, chunker=chunk_repo, include_prefixes=None) -> IngestReport`, the
-     planner: walk (via p1, honouring `include_prefixes`); a walk that yields **zero files raises**
-     `EmptyCorpus` before any write. For each file compute `file_sha`; same sha in `files` → skip;
+     planner: **walk first, mutate second.** Run the p1 walk (honouring `include_prefixes`) to
+     completion into an in-memory list of `(rel_path, bytes)` with an `errors` list; a walk that
+     yields **zero files raises `EmptyCorpus`**, and a walk with **any traversal error raises
+     `WalkIncomplete`** (listing the errors) — both **before any write or delete**. Only a complete
+     walk may proceed. For each file compute `file_sha`; same sha in `files` → skip;
      else delete that file's chunks (FTS/vec rows via triggers/explicit delete) and insert the new
      ones. Embed only chunks whose `content_sha` is absent from `embed_cache` for this
      `(model, dim, provider)`; cache every new vector. **Pruning is scoped:** files in `files` for
@@ -80,12 +83,17 @@ Implement `xyz/index/`:
    - **second ingest, unchanged tree: `files_skipped == files_seen`, `files_reingested == 0`,
      `chunks_written == 0`, embedder call count 0, < 1 s** (all five asserted separately — the
      red control below depends on it);
-   - edit one file to add a unique token: only that file is re-ingested (`files_reingested == 1`),
-     its unchanged chunks are cache hits, `fts_match(new_token)` finds it and `fts_match(old_token)`
-     no longer does;
+   - in one fixture file, **replace** the unique token `OLDTOKEN` (present in exactly one chunk)
+     with `NEWTOKEN`, leaving that file's other chunks byte-identical: only that file is re-ingested
+     (`files_reingested == 1`), its unchanged chunks are cache hits (embedder called once, for the
+     changed chunk), `fts_match("NEWTOKEN")` returns that chunk and `fts_match("OLDTOKEN")` is empty;
    - delete one file: its chunks vanish from all three tables and `fts_match` of its unique token is
      empty; with `include_prefixes` naming a different directory, that deleted file is **not** pruned;
    - an empty directory raises `EmptyCorpus` and writes nothing;
+   - **incomplete walk:** after a full ingest, monkeypatch `os.scandir` to raise `PermissionError`
+     for one subdirectory (after other files have been yielded) → `ingest` raises `WalkIncomplete`,
+     and every pre-existing `chunks` / `chunks_fts` / `chunks_vec` / `files` row survives unchanged
+     (counts and `fts_match` of a token from the unreadable subdirectory still succeed);
    - `IndexMismatch` is raised separately for a differing `model_id`, a differing `dim`, and a
      differing `provider` (three tests);
    - a chunk's vector read back from `chunks_vec` equals its cached vector;
@@ -104,4 +112,6 @@ No query path (p3), no CLI (p4). No real model in pytest.
 - Red controls (show once each in the relay, then restore): (a) remove the `files` sha
   short-circuit → the `files_skipped == files_seen` / `files_reingested == 0` assertions fail even
   though the cache still keeps embedder calls at 0; (b) drop the FTS insert trigger → the
-  `fts_match(new_token)` test fails while the count test may still pass.
+  `fts_match("NEWTOKEN")` test fails while the count test may still pass; (c) disable the
+  `WalkIncomplete` guard (ignore `errors`) → the incomplete-walk test fails because the unreadable
+  subdirectory's rows get pruned.
