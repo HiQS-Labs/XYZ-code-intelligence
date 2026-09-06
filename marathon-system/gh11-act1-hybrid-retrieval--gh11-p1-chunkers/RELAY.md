@@ -1,5 +1,5 @@
 # Marathon Phase gh11-p1-chunkers
-STATUS: Open
+STATUS: Approved
 NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P1-CHUNKERS-TURN builder=codex reviewer=agy round-cap=7 -->
@@ -182,3 +182,17 @@ Verification (only the phase-specific test, with temporary output under `.relay-
 
 The warn-only drift notice named `relay-automation/relay-turn-lib.sh`, `src/project.js`, and
 `src/events.js`; none is on this phase's dependency or edit path.
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+I reviewed the full code in `xyz/ingest/walk.py`, `xyz/ingest/chunk.py`, `xyz/ingest/__init__.py`, `tests/test_chunkers.py`, and `pyproject.toml`.
+- The `walk_repo` appropriately records exceptions into `errors` list and respects `MAX_FILE_BYTES` and `BINARY_SNIFF_BYTES`.
+- The `chunk_file` handles multiple languages via tree-sitter, accurately partitions into definitions, module residual parts with `# ...`, handles Markdown heading chunking, and uses a character limit of 6000 with a split overlap as required.
+- The path prefix injection `embedded_text = f"{rel_path}\n\n{draft.text}"` is verified.
+- The `residual_parts` generation accurately avoids capturing bodies using `occupied` ranges.
+- All 11 tests from `tests/test_chunkers.py` pass without errors locally. No latent defects found in these new files.
+
+**Verdict:** Approved
+
+relay closed, no further turn needed
