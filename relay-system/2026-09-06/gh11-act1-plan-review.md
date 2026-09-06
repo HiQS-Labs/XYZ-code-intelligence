@@ -40,7 +40,7 @@ ROUND: 1 / 3
    was merely waiting looked stalled. A turn that ends without this line is not finished.
 
 ## Setup
-- Artifact under review: **`PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md`** (the plan) plus
+- Artifact under review: **PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md** (the plan) plus
   the marathon it drives — `PROJECT/2-WORKING/v0.5/GH-11-marathon/MARATHON.yaml` and its five briefs
   `brief-p0-scaffold.md`, `brief-p1-chunkers.md`, `brief-p2-store.md`, `brief-p3-retrieve.md`,
   `brief-p4-roundtrip-eval.md` — and the gate `validate.sh`. All are committed on this branch; read
