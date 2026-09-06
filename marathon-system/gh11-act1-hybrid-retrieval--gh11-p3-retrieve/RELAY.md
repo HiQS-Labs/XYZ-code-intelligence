@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p3-retrieve
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P3-RETRIEVE-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -165,3 +165,27 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Implemented the complete Phase 3 retrieval surface.
+
+- Added `xyz/retrieve/models.py`, `lexical.py`, `dense.py`, `fuse.py`, `rerank.py`, `pipeline.py`,
+  and `latency.py`; exported the public result and retriever types from `xyz/retrieve/__init__.py`.
+- Kept every query on the supplied `Store`; BM25 sanitises user syntax and negates FTS5 scores,
+  vec0 uses the required bound `k = ?` form and negates distance, and RRF uses one-based ranks with
+  chunk-id tie-breaking.
+- Implemented all retrieval modes, constructor-time embedder identity enforcement, depth truncation,
+  a 50-item rerank head with an untouched RRF tail, chunk-id/path rankings, query-level tau, and all
+  six timing keys. Cross-encoder output is length-checked and rejected if non-finite.
+- Added `FakeReranker` and `tests/test_retrieve.py`, including RRF arithmetic, FTS safety/sign,
+  real vec0 execution, mode/tau contracts, all three embedder mismatch fields, 120-candidate depth
+  and tail preservation, same-path chunk identity, and latency percentiles.
+- Focused verification: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$PWD" "$XYZ_PY" -m pytest -q
+  tests/test_retrieve.py` → `9 passed in 0.11s`.
+- Required red control: replacing `k = ?` with `LIMIT ?` made the focused SQL-contract test fail;
+  restored `k = ?`, then reran the green suite above.
+- Required offline real-model smoke: `CrossEncoderReranker().score(...)` returned finite scores
+  `[0.5972555875778198, 0.017442485317587852]`; the code snippet ranked above unrelated SQL.
+
+**Handoff:** Ready for whole-file review by agy.
