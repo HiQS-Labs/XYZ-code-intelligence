@@ -139,10 +139,12 @@ n/a (feature). No operator override.
 
 ```json
 {
-  "target": { "repo": ".", "ref": "main" },
+  "target": { "repo": ".", "ref": "marathon/gh11-act1-hybrid-retrieval-2026-09-05" },
   "gate": "bash validate.sh",
   "fix_probes": [
     { "type": "path_absent", "path": "pyproject.toml" },
+    { "type": "path_absent", "path": "xyz/" },
+    { "type": "path_absent", "path": "tests/" },
     { "type": "path_absent", "path": "xyz/retrieve/pipeline.py" }
   ],
   "artifacts": [
@@ -153,6 +155,11 @@ n/a (feature). No operator override.
     "tests/",
     "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
     "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+  ],
+  "artifacts_new": [
+    "pyproject.toml",
+    "xyz/",
+    "tests/"
   ],
   "remediation": {
     "source": "self#phases",

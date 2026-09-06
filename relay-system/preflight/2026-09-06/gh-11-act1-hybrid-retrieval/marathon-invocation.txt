@@ -1,0 +1,7 @@
+XYZ_HARNESS_CONTEXT=swarm XYZ_SESSION_ID=gh-11-act1-hybrid-retrieval RELAY_WORKTREE_ISOLATION=1 .xyz/relay-automation/marathon-drive.sh \
+  --phase-brief <packet>/packet.md \
+  --reviewer agy \
+  --builder codex \
+  --artifact GUIDING-PRINCIPLES.md,pyproject.toml,validate.sh,xyz/,tests/,PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md,PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md \
+  --pre-advance-cmd 'bash validate.sh' \
+  --require-clean
