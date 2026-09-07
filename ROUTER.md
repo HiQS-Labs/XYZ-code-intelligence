@@ -11,6 +11,7 @@ This file is the first entry point for an AI agent working in this repo: it tell
 - `ROADMAP.md` = pointer ledger for this repo's own maintenance work
 - `CHANGELOG.md` = the end-of-iteration running log (first-class PDDA artifact; governed by `PROJECT/PDDA.md`)
 - `RELEASES.md` = forward-looking release-planning ledger (first-class PDDA artifact; governed by `PROJECT/PDDA.md`)
+- `MEASUREMENTS/BASELINE.md` = every tuning knob's current value and why; `MEASUREMENTS/runs/` = one immutable file per measurement run
 - `PROJECT/PDDA.md` = the canonical PDDA contract and automation rules
 - `utils/pdda/PDDA-INSTALL.md` = the extraction/install manifest PDDA was installed from
 - `utils/pdda/pdda.sh` = the unified runnable surface (dispatcher + every deterministic check + `run`)
@@ -36,6 +37,7 @@ This file is the first entry point for an AI agent working in this repo: it tell
 - Every captured GitHub issue doc in `PROJECT/1-INBOX/GH-*.md` must also be parked in `ROADMAP.md` as a one-line queue entry immediately at intake, then promoted or removed later. Enforced by `utils/pdda/pdda.sh roadmap-coverage`; governance lives in `PROJECT/PDDA.md` -> "GitHub issue intake" + "ROADMAP.md contract".
 - The long-term canonical deterministic surface is `utils/pdda/pdda.sh`; do not add wrapper commands unless a real external integration forces them.
 - Do not override deterministic PDDA findings with prose.
+- A tuning knob's current value lives in `MEASUREMENTS/BASELINE.md` and nowhere else. Changing one requires a run in `MEASUREMENTS/runs/` that justifies it; run files are immutable once written.
 - Do not report a win you did not verify with the relevant script or test.
 - Update `CHANGELOG.md` at the end of each iteration; its governance lives in `PROJECT/PDDA.md` — do not re-specify CHANGELOG rules in `AGENTS.md` or elsewhere.
 

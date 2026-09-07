@@ -3,6 +3,30 @@
 Newest-first, dated end-of-iteration record. One entry per substantive iteration: what changed,
 why, and the verification. See `PROJECT/PDDA.md` for the full contract.
 
+## 2026-09-07 (later)
+
+### MEASUREMENTS ledger, and the benchmark baseline settled from defaults
+
+- Added `MEASUREMENTS/` — `BASELINE.md` (every tuning knob, its value, and *why that value*) and
+  `runs/` (one immutable file per measurement run). Wired into `ROUTER.md` and `README.md`. The
+  first run record backfills the Act 1 round-trip, including the caveat that its numbers are upper
+  bounds on a saturated set. Each knob is tagged **default / measured / constraint / judgment**, and
+  the six that are still `judgment` are listed openly so they can be attacked rather than inherited.
+- **Replaced the invented "~70" benchmark size with 50** — the TREC per-track convention. Derived by
+  the operator's ladder: field default first, then guiding principles #3 (*deterministic where
+  judgment isn't needed*) and #7 (*labelling is expensive and irreversible, so start small and grow
+  on evidence*), then a cross-model consult to break what remained. Both advisors independently
+  confirmed 50 and named the same convention.
+- Consult adjudications recorded with their reasoning: stratify by **query type, not language**
+  (both advisors); **zero name-carried questions** enforced by a deterministic **path-only screen** —
+  reject any candidate whose gold file a path-only baseline ranks in the top 3 (Codex over agy, whose
+  10 "sanity check" questions are instead served by keeping the old saturated 30-query set as a
+  separate regression set); **dev split 20** as 10 answerable + 10 no-answer, disjoint from the frozen
+  set *and its gold files*; **growth rule** of +25 when every arm hits answerable R@3 = 1.000.
+
+Verification: `bash validate.sh` -> `validate: OK`. Consult transcripts:
+`relay-system/2026-09-07/benchmark-baseline-103905/`.
+
 ## 2026-09-07
 
 ### GH-11 Act 1 — the XYZ retrieval library exists

@@ -32,6 +32,7 @@ See `ROADMAP.md` for the live ledger and `CHANGELOG.md` for dated iteration hist
 - `.embed-tmp/scripts/embed_repos.py`, `query_repos.py` — working proof-of-concept embedding pipeline: batch-embeds a repo with CodeRankEmbed, with CPU/memory throttling, per-repo process isolation, and profiling. Sidecar embeddings already generated for several external repos under `.embed-tmp/<repo>/`.
 - `utils/pdda/` + `PROJECT/PDDA.md` — the doc-governance automation (frontmatter checks, roadmap coverage, changelog hygiene) this repo runs on itself.
 - `.xyz/` — vendored multi-agent coordination harness (`tick` CLI, relay/marathon tooling) used to run AI-agent workflows here; not part of the XYZ Code Intelligence product itself.
+- `MEASUREMENTS/` — the tuning ledger: `BASELINE.md` holds every knob's current value and the reason for it; `runs/` holds one immutable record per measurement run.
 - Root governance docs: `ROUTER.md` (start here each session), `AGENTS.md`, `GUIDING-PRINCIPLES.md`, `SOP.md`, `CHANGELOG.md`, `ROADMAP.md`, `RELEASES.md`.
 
 ## Setup

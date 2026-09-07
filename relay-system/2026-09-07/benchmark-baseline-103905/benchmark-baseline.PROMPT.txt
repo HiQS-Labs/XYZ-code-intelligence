@@ -1,0 +1,38 @@
+# Tie-break: default size and slice allocation for a frozen code-retrieval benchmark
+
+Answer in under 350 words. Be decisive; give numbers, not ranges. **Prefer a recognised default over
+a bespoke design** — the operator's instruction is "go with a default baseline, middle of the road
+whenever possible."
+
+## Situation
+Local code-retrieval system (dense CodeRankEmbed + BM25/FTS5 + RRF + cross-encoder rerank). We must
+build a FROZEN hand-labelled benchmark. Labelling is human time — expensive and not reversible.
+
+Current 30-query set is **saturated**: dense scores R@3 = 1.000, MRR 0.9444, so it cannot rank the
+arms (dense 0.9444 > hybrid 0.9222 > hybrid+rerank 0.9016 — all within noise). Root cause measured:
+most queries are answerable from the filename alone (prefixing chunks with file paths moved MRR
+0.80 -> 0.98).
+
+An earlier plan said 250 questions across 9 slices; an agent then invented "60-80". Neither number
+was derived from anything. We are replacing that with a defensible default.
+
+## Corpus actually available
+Python 1,464 files · JS 849 · TS 16 · **PHP 106** (2 WordPress repos: a child theme and a Woo plugin)
+· HTML 317 · **TSX 0 · Blade 0 · Twig 0**.
+
+## Questions — answer all four
+1. **Size.** Is **50** the right default for a frozen IR test collection of this kind (the TREC
+   per-track convention), or is there a better-recognised default? If you disagree with 50, name the
+   specific number and the convention it comes from — not a preference.
+2. **Slice allocation.** Given the corpus above, how should ~50 questions be split? Name the slices
+   and the counts. Is per-language stratification even the right axis here, or should it be by
+   query TYPE (name-carried vs behaviour-described vs cross-file vs no-answer)? Defend the choice.
+3. **Dev split.** How many additional questions for tuning the no-answer threshold, and must they be
+   disjoint from the frozen set?
+4. **Growth rule.** State ONE measurable trigger for growing the set later, so it grows on evidence
+   rather than vibes.
+
+## Constraint that matters
+The set's whole job is to DISCRIMINATE. A replacement that saturates again has failed. Say
+explicitly how your allocation avoids re-saturating, given that filename-answerable queries are the
+known failure mode.
