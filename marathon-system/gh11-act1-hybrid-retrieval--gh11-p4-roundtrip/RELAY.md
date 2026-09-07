@@ -1,5 +1,5 @@
 # Marathon Phase gh11-p4-roundtrip
-STATUS: Open
+STATUS: Approved
 NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P4-ROUNDTRIP-TURN builder=codex reviewer=agy round-cap=7 -->
@@ -194,3 +194,20 @@ Implemented the p4 CLI/evaluation surface and completed the measured real-repo g
 - Focused verification: `32 passed` across chunker/store/metrics/CLI tests; explicit red controls
   `3 passed` for the rank-11 depth flip and both empty-query-file shapes. The harness-owned full
   gate was intentionally not run.
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+
+**Verdict:** Approved
+
+The implementation strictly follows the `gh11-p4-roundtrip` phase brief.
+- Metrics evaluation handles depth-bounded ranking and properly preserves chunk identities to allow reorder tracking downstream.
+- The `score()` function is accurate and correctly calculates depth, MRR and recall.
+- `xyz/cli.py` accurately wires up `ingest`, `query`, and `eval` with proper metric outputs, latency aggregates, reorder counting, and corpus/gold-path assertions.
+- The byte-offset fallback for Tree-sitter in `xyz/ingest/chunk.py` appropriately resolves the point metadata corruption.
+- The execution results in `FINDINGS-0.5.md` evidence the QA-gate conditions completely (full table, subset sizes, chunker version, latency).
+- The `GH-11-ACT1-HYBRID-RETRIEVAL.md` run log is accurately updated.
+- Required explicit red controls for `xyz eval` missing queries and rank-11 depth flip are tested and reported.
+
+relay closed, no further turn needed
