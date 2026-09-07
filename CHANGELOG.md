@@ -3,6 +3,38 @@
 Newest-first, dated end-of-iteration record. One entry per substantive iteration: what changed,
 why, and the verification. See `PROJECT/PDDA.md` for the full contract.
 
+## 2026-09-07 (latest)
+
+### Post-merge consistency sweep: stale numbers, a dropped cleanup step, and the verified env
+
+Housekeeping after PR #16 merged, plus one thing a two-agent recon of the pre-merge stash found.
+
+- **Three live "what's next" statements still said `~70 questions`** — the canonical doc's status
+  table, `ROADMAP.md`, and the Act 1 capture doc — while `MEASUREMENTS/BASELINE.md` had already
+  settled the size at **50**. Anyone starting Phase 2 reads a status table, not a ledger, so the
+  contradiction pointed the wrong way. All three now name the frozen 50, the 20-question dev split
+  and the path-only screen, and link #17. Two older `250-query` references are kept but re-framed as
+  history rather than plan, since the reasoning behind their supersession is worth preserving.
+- **Phase 5 gained step 6: delete the known footguns in place.** `ASK_SELF_PATH`, the
+  `db_filename`/`db_path` footgun, the disabled Qwen provider paths and the copied-not-linked slash
+  commands were listed under **Sunset (do not port)** and were retired implicitly by the old step
+  "archive the Ask-Self repo". The 2026-09-07 inversion to an absorption model dropped that archive
+  step by design — Ask-Self stays and keeps running — which silently un-retired all four. "Do not
+  port" retires nothing when there is no longer a port.
+- **Added `requirements-verified.txt`** — the exact 49-package set, captured from the Act 1 clone's
+  virtualenv just before that clone was deleted. `pyproject.toml` remains the install source and
+  pins the 7 direct dependencies; this file records the transitive set as well, because the
+  transitive versions were load-bearing at least once: transformers 5.16.1 with torch 2.14.0 loads
+  `cross-encoder/ms-marco-MiniLM-L-6-v2` without error and returns `[nan, nan]`. It is a record to
+  diff against, not a lockfile to install from.
+- Closed #6 (local-only multi-arm scorer) — delivered as `xyz eval --modes`, not as the proposed
+  patch to `score_retrieval.py`. Opened #17 (Phase 2). Retired the Act 1 clone and dropped the
+  superseded stash; the recon confirmed no URL, numeric constraint, issue reference or decision
+  rationale was lost with it.
+
+**Verification:** `pdda governance / frontmatter / status-table / roadmap / roadmap-coverage /
+hardcoded-paths / changelog` all `errors=0 warns=0` under `PDDA_MODE=full`.
+
 ## 2026-09-07 (later)
 
 ### MEASUREMENTS ledger, and the benchmark baseline settled from defaults

@@ -20,7 +20,7 @@ context_tags: [retrieval, hybrid-search, fts5, sqlite-vec, rrf, rerank, tree-sit
 non_goals:
   - Absorbing Ask-Self's ingest/synthesis/history code (Act 2-3 of #11) — only the embed-cache semantics are ported here
   - Any Slack, HTTP or MCP surface (Acts 3-4 of #11)
-  - The 250-query frozen benchmark (canonical doc Phase 2) — the 30-query LTVera-Pandas set is the gate for this act
+  - The frozen benchmark (canonical doc Phase 2, now #17) — the 30-query LTVera-Pandas set is the gate for this act. Written here as "250-query"; that plan was superseded on 2026-09-07 by the frozen 50, selected for difficulty rather than volume.
   - Model bake-off, fine-tuning, ONNX/int8 serving (Phases 3-4, GH-5) — CodeRankEmbed via sentence-transformers is the placeholder dense lane
   - Ask-Self sunset (Phase 5)
 ---
@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Act 1 complete: all 5 marathon phases Approved, 45 tests green, final Codex QA **PASS** (6 pass / 1 nit / 0 blockers), PR #15 open against `main` (2026-09-07). | Merge PR #15, then Phase 2 — the ~70-question harder frozen set including the PHP/WordPress repos. |
+| Act 1 complete and merged: all 5 marathon phases Approved, 45 tests green, final Codex QA **PASS** (6 pass / 1 nit / 0 blockers), PR #15 merged to `main` as `fa1812d` (2026-09-07). | Phase 2 (#17) — the **frozen 50** plus a disjoint 20-question dev split, including the PHP/WordPress repos. Size and shape are settled defaults in `MEASUREMENTS/BASELINE.md`. |
 
 ## Observed problem
 
