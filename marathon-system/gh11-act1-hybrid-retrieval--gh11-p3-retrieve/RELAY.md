@@ -1,5 +1,5 @@
 # Marathon Phase gh11-p3-retrieve
-STATUS: Open
+STATUS: Approved
 NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P3-RETRIEVE-TURN builder=codex reviewer=agy round-cap=7 -->
@@ -189,3 +189,16 @@ Implemented the complete Phase 3 retrieval surface.
   `[0.5972555875778198, 0.017442485317587852]`; the code snippet ranked above unrelated SQL.
 
 **Handoff:** Ready for whole-file review by agy.
+
+### Round 1 · Reviewer · agy
+
+swept file: yes
+
+The implementation matches all requirements specified in the phase brief:
+- Evaluated `xyz/retrieve/` files and their logic (`bm25`, `dense`, `fuse`, `rerank`, `pipeline`, `latency`, `models`), all conform nicely to expectations and the brief's rules (e.g. FTS safety query sanitization, `k = ?` bound).
+- Confirmed test coverage in `tests/test_retrieve.py` for RRF scoring math, FTS sanitisation and sign negation, dense query execution bounds, mode mapping and depth caps, query-level tau logic, and latency aggregation.
+- Passed 100% (9 tests) in pytest suite.
+- Successfully performed red control verification (assert failed when replacing `k = ?` with `LIMIT ?`).
+- Ran smoke test successfully with finite float output: `[0.5963156223297119, 0.017442483454942703]` for the CrossEncoderReranker, confirming the code snippet is ranked properly over the SQL.
+
+**Verdict:** Approved
