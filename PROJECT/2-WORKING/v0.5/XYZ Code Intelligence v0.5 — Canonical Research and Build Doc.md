@@ -237,38 +237,51 @@ path moved MRR 0.80 → 0.98, because the answers are carried by filenames
 (`"probe klaviyo api rate limits"` → `scripts/probe_klaviyo_rate_limits.py`). **Any question a
 filename answers cannot separate two retrievers.**
 
-So the target is **difficulty, not count**: roughly **60-80 questions selected to be hard**, frozen
-before any model selection.
+So the target is **difficulty, not count**. Size and shape are now **defaults, not judgment calls**
+— settled 2026-09-07 and recorded in `MEASUREMENTS/BASELINE.md`, which is the canonical home for
+every knob. An earlier draft of this section said "~70", a number an agent invented by splitting the
+difference; it has been replaced.
+
+**Size: 50.** The TREC per-track convention for a frozen test collection. Guiding principle #3
+(*deterministic where judgment isn't needed*) says take the field default over a made-up number;
+principle #7 adds that labelling is expensive and irreversible, so start at the smallest defensible
+size and grow on evidence. Both consult advisors independently confirmed 50 and named the same
+convention.
+
+**Stratify by query TYPE, not language** — both advisors, emphatically. Language balance does nothing
+about the measured failure mode; question difficulty does.
+
+| slice | n | what it is |
+|---|---:|---|
+| behaviour-described, single target | 24 | the query describes what the code *does*; it shares no token with the file or symbol name |
+| cross-file / flow / architecture | 14 | the answer spans call sites, not one chunk |
+| test ↔ implementation linkage | 4 | asymmetric naming between a test and the code it covers |
+| verified no-answer | 8 | the corpus genuinely cannot answer it; must return nothing, not a plausible wrong chunk |
+
+**Zero name-carried questions, enforced by a path-only screen.** Every answerable candidate is
+rejected if a **path-only retrieval baseline puts the gold file in its top 3**. This is the rule that
+makes re-saturation structurally hard instead of merely hoped against, and it is a deterministic
+filter rather than a human judgement about whether a question "looks too easy". The existing
+30-query set is **kept separately as a regression/smoke set** — its saturation is exactly what makes
+it a good "did we break the easy path" check, and keeping it there costs none of the frozen budget.
+
+**Language quota is secondary** — recorded and checked, but subordinate to type: Python 16,
+JS+TS 12, PHP 9, HTML/WP-template 5 (= the 42 answerable). TS folds into JS (16 files repo-wide).
+Blade and Twig are absent because the corpus contains none.
+
+**Dev split: 20 — 10 answerable + 10 no-answer**, for tuning τ. Tuning a *no-answer* threshold needs
+no-answer examples, hence the balance. It must be disjoint from the frozen set **and from its gold
+files**, or threshold tuning leaks selection information into the only decision set.
+
+**Growth rule (one measurable trigger):** add 25 more hard questions when **every compared arm scores
+answerable R@3 = 1.000** on the frozen 50. That is the direct, unambiguous test for a recurrence of
+the failure this set exists to fix. A secondary signal worth watching, but not itself a trigger: the
+top two arms' MRR gap falling inside the noise floor while both score above 0.85.
 
 **Corpus (decided 2026-09-07: XYZ serves the PHP/WordPress repos too).** The four originally indexed
-repos are Python/JS only — across all of them: 1 `.php` file, 0 `.blade.php`, 0 `.twig`, 0 `.tsx`.
-PHP coverage therefore requires indexing the WordPress repos, which are real and git-backed:
-
-| repo | .php | .js |
-|---|---:|---:|
-| `universal-child-theme-oct-2024` | 47 | 21 |
-| `KISS-woo-order-monitoring-alerts` | 59 | 1 |
-| `LTVera-Pandas` | — | 390 |
-| `rebalanceOS` / `aegis-sleuth-slack-bot` / `XYZ-forge` | — | 459 |
-
-**Blade and Twig are dropped as slices.** They are Laravel/Symfony conventions and appear **zero**
-times in this stack; WordPress uses plain PHP templates. The template slice is retargeted to WP theme
-templates and HTML, which do exist.
-
-Slices, sized to the corpus (~70 questions):
-
-| slice | n | why it is hard |
-|---|---:|---|
-| behaviour-described, not named | 15 | the query shares no token with the file or symbol name |
-| cross-file / "how does X work" | 12 | the answer spans call sites, not one chunk |
-| PHP (WordPress plugin + theme) | 12 | new corpus; hooks/filters indirection |
-| Python | 10 | behaviour-led, not filename-led |
-| JS | 8 | behaviour-led |
-| WP templates + HTML | 6 | markup with logic embedded |
-| test ↔ implementation linkage | 5 | asymmetric naming |
-| no-answer negatives | 8 | must return nothing, not a plausible wrong chunk |
-
-A separate ~15-question dev split tunes τ. The frozen set is never used for training or selection.
+repos are Python/JS only — between them: 1 `.php` file, 0 `.blade.php`, 0 `.twig`, 0 `.tsx`. PHP
+coverage therefore requires indexing the WordPress repos, which are real and git-backed:
+`universal-child-theme-oct-2024` (47 PHP / 21 JS) and `KISS-woo-order-monitoring-alerts` (59 PHP).
 
 **Reuse, do not rebuild.** The query-file format (`.embed-tmp/eval/queries-*.json`) already works and
 `xyz eval` already computes MRR@D / R@k / miss@D with chunk-id-preserving rankings. `xyz/eval/metrics.py`
@@ -284,9 +297,11 @@ pass rate). That is an agent-in-the-loop evaluation system — its own non-deter
 flakiness — built to referee a difference the direct metrics cannot yet measure. Revisit only if two
 candidates tie on the harder set.
 
-**QA gate:** every question hand-verified; **at least one arm scores below R@3 = 1.000** (proof the
-set actually discriminates — a set that saturates again has failed its purpose); the PHP repos are
-indexed and their gold paths resolve; the harness runs unattended and emits one scorecard.
+**QA gate:** every question hand-verified; **every answerable question passes the path-only screen**
+(no gold file in a path-only baseline's top 3); **at least one arm scores below R@3 = 1.000** (proof
+the set actually discriminates — a set that saturates again has failed its purpose); the PHP repos
+are indexed and their gold paths resolve; the dev split is disjoint from the frozen set and its gold
+files; the harness runs unattended and emits one scorecard into `MEASUREMENTS/runs/`.
 
 ## Phase 3 — Model bake-off
 
