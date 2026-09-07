@@ -1,6 +1,6 @@
 # Marathon Phase gh11-p4-roundtrip
 STATUS: Open
-NEXT: codex (Builder)
+NEXT: agy (Reviewer)
 
 <!-- marathon-drive: task=MARATHON-GH11-P4-ROUNDTRIP-TURN builder=codex reviewer=agy round-cap=7 -->
 
@@ -166,3 +166,31 @@ You are the REVIEWER for this phase. Read the latest builder block above AND rev
    codex, take your turn" when requesting changes, or "relay closed, no further turn needed" when
    approving. The beta report singled this out: the Reviewer turn did not tell the user to go back to the
    Producer, so the relay looked stalled when it was simply waiting. Do this EVERY round.
+
+### Round 1 · Builder · codex
+
+Implemented the p4 CLI/evaluation surface and completed the measured real-repo gate.
+
+- Files touched: `xyz/cli.py`, `xyz/eval/__init__.py`, `xyz/eval/metrics.py`,
+  `xyz/index/store.py`, `xyz/ingest/chunk.py`, `tests/test_cli.py`, `tests/test_metrics.py`,
+  `PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md`, and
+  `PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md`.
+- Added depth-bounded, chunk-identity-preserving MRR/recall reports and JSON serialization; added
+  `ingest`, `query`, and `eval` argparse commands with injectable local models, corpus/gold-path
+  validation, latency aggregation, top-10 chunk-id reorder counting, ingest metadata, peak RSS,
+  and a 200-chunk ETA callback.
+- During the full-repo run, reproduced a native Tree-sitter point corruption on a valid archived
+  Python file (`start_point.row=7516205155` at sane byte offsets). Changed the chunker to derive
+  line numbers from source byte offsets; the exact file then produced 19 chunks with the affected
+  function correctly at line 279. Added `XYZ_DEVICE` pinning because this managed runtime advertises
+  MPS but rejects it at model placement time.
+- Full corpus projected 17,258 chunks; required ETA was 206.5 minutes at chunk 204, so the documented
+  fresh subset fallback fired. Subset result: 339 files / 3,020 chunks, 1,664.72 s first-ingest wall,
+  9,852.62 MB peak RSS; identical second ingest 8.62 s with `chunks_embedded=0`.
+- Depth-100 metrics: dense 0.9444 MRR / 0.9000 R@1; BM25 0.8583 / 0.7667; hybrid
+  0.9222 / 0.8667; hybrid+rerank 0.9016 / 0.8667. All arms had miss@100=0; reranking changed
+  30/30 top-10 chunk-id sequences. The reranked arm is within the 0.05 acceptance tolerance of
+  dense on both load-bearing metrics. Complete p50/p95 stage timings are in `FINDINGS-0.5.md`.
+- Focused verification: `32 passed` across chunker/store/metrics/CLI tests; explicit red controls
+  `3 passed` for the rank-11 depth flip and both empty-query-file shapes. The harness-owned full
+  gate was intentionally not run.

@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Plan review closed after 4 rounds / 14 findings; cross-model consult voted FIRE unanimously (both advisors called rounds 3-4 overengineering); prelaunch re-verified with the launch env (2026-09-06). | Marathon firing: p0 scaffold -> p1 chunkers -> p2 store -> p3 retrieval -> p4 real round-trip on LTVera-Pandas. |
+| Built p4 CLI/evaluator and completed the real labelled-subset round-trip: 3,020 chunks, second ingest 8.62 s with zero embeddings, four modes scored, 30/30 reranked (2026-09-06). | agy reviews p4 implementation and recorded evidence; if approved, Act 1 is ready for orchestrator close-out. |
 
 ## Observed problem
 
@@ -230,3 +230,11 @@ n/a (feature). No operator override.
   - **Round cap 3/3 exhausted → `STATUS: Escalated`.** Implementation is stopped pending an operator
     decision: extend the cap for a round-4 re-review of the r3 fixes, or accept the plan explicitly.
     The marathon was **not** fired.
+- 2026-09-06 — p4 round-trip built and measured. The full corpus was projected at 17,258 chunks;
+  its real CPU run triggered the documented fallback at 204 chunks with a 206.5-minute ETA. The
+  fresh root-preserving `scripts/` + `app/` + `alembic/` subset indexed 339 files / 3,020 chunks in
+  1,664.72 s wall at 9,852.62 MB peak RSS. Identical re-ingest took 8.62 s and embedded zero chunks.
+  Depth-100 results: dense MRR/R@1 0.9444/0.9000; BM25 0.8583/0.7667; hybrid 0.9222/0.8667;
+  hybrid+rerank 0.9016/0.8667, with zero misses in every arm and 30/30 top-10 chunk-id sequences
+  reordered. The reranked arm remains within the 0.05 acceptance tolerance of dense on both load-
+  bearing metrics. Full per-stage p50/p95 and QA-gate evidence are recorded in FINDINGS-0.5.md.

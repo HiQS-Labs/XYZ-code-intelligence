@@ -2,7 +2,7 @@
 title: FINDINGS-0.5 — Embedding Model Evaluation Findings Log
 status: active
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-06
 owner: Noel Saw
 goal: Running findings log for the v0.5 embedding-model evaluation — CodeRankEmbed across four repos, measured against Gemini embeddings on a labelled retrieval set.
 effort: 3
@@ -42,7 +42,7 @@ Supporting detail: `.embed-tmp/BENCHMARKS.md` (run-by-run record, including fail
 
 | What was just completed | What's next |
 |---|---|
-| Embedded all 4 repos (16,433 chunks), scored CodeRankEmbed vs Gemini on a 30-query labelled set — near-parity (2026-08-28). | Embed the file path with each chunk (§3) and re-score; then GH-5 quantization benchmark on GCP Intel. |
+| Completed the GH-11 Act 1 hybrid retrieval round-trip on the labelled LTVera-Pandas subset: 3,020 chunks, four scored modes, dedupe and latency gates met (2026-09-06). | Review the Act 1 evidence, then continue the v0.5 plan with a larger non-saturated benchmark and serving/runtime work. |
 
 ---
 
@@ -258,3 +258,60 @@ cost since querying is the repeated workload:
   ever needs resolving.
 - `query_repos.py` still derives `OUT_ROOT` from its own location and cannot see the
   sidecars now that they live in `temp/`; it needs the same override the embedding runs use.
+
+---
+
+## Run: XYZ hybrid retrieval round-trip (GH-11 Act 1) — 2026-09-06
+
+This run used the new `xyz` SQLite/FTS5/sqlite-vec pipeline and the existing 30-query labelled
+LTVera-Pandas set. Metrics are depth-bounded: **MRR@100 / R@k / miss@100**, with chunk ranks and
+no path de-duplication. Run 9's MRR 0.801 / R@1 0.700 ranked the full corpus with the old chunker
+and is context only, not a directly comparable baseline.
+
+### Corpus and ingest provenance
+
+- **corpus: subset** — one root-preserving invocation with `scripts/`, `app/`, and `alembic/`;
+  every gold path was verified present in `chunks.path` before scoring.
+- **339 files / 3,020 chunks**; chunker version = **this commit** (including byte-offset-derived
+  source lines, avoiding corrupt native Tree-sitter point metadata observed during the full run).
+- Full-corpus attempt: 1,793 files / 17,258 chunks projected by the fake-model dry run. The real
+  CPU ingest was aborted at 204 chunks when the required early estimate reported **206.5 min**,
+  above the 45-minute fallback threshold.
+- First subset ingest: **1,664.72 s wall** (27m 44.72s); `files_seen=339`,
+  `chunks_written=3,020`, `chunks_embedded=3,020`; peak RSS **9,852.62 MB**.
+- Identical second ingest: **8.62 s wall**; `files_skipped=339`, `chunks_written=0`,
+  `chunks_embedded=0`.
+- Local-only execution: cached CodeRankEmbed and `mixedbread-ai/mxbai-rerank-xsmall-v1`, CPU.
+  MPS could not be used in the managed runtime, so `XYZ_DEVICE=cpu` was pinned explicitly.
+
+### Retrieval quality at depth 100
+
+| mode | MRR@100 | R@1 | R@3 | R@5 | R@10 | miss@100 |
+|---|---:|---:|---:|---:|---:|---:|
+| dense | **0.9444** | **0.9000** | **1.0000** | **1.0000** | **1.0000** | 0 |
+| BM25 | 0.8583 | 0.7667 | 0.9333 | 0.9667 | 0.9667 | 0 |
+| hybrid | 0.9222 | 0.8667 | 0.9667 | 0.9667 | **1.0000** | 0 |
+| hybrid+rerank | 0.9016 | 0.8667 | 0.9667 | 0.9667 | 0.9667 | 0 |
+
+The reranked arm passes the Act 1 noise-floor criterion: its MRR is 0.0428 below dense and its
+R@1 is 0.0333 below dense, both within 0.05. This saturated 30-query set does **not** establish
+that reranking improves relevance: it reordered all 30 top-10 chunk-id sequences but scored below
+dense and hybrid. The CPU reranker cost is also material and belongs in later serving work.
+
+### Latency (milliseconds, p50 / p95)
+
+| mode | embed query | BM25 | dense | fuse | rerank | total |
+|---|---:|---:|---:|---:|---:|---:|
+| dense | 81.28 / 119.48 | 0 / 0 | 3.12 / 4.65 | 0 / 0 | 0 / 0 | 86.42 / 125.35 |
+| BM25 | 0 / 0 | 0.85 / 2.03 | 0 / 0 | 0 / 0 | 0 / 0 | 1.34 / 2.68 |
+| hybrid | 73.68 / 91.92 | 0.73 / 1.89 | 3.10 / 3.82 | 0.12 / 0.16 | 0 / 0 | 78.70 / 96.23 |
+| hybrid+rerank | 142.91 / 313.98 | 1.27 / 3.33 | 3.93 / 6.40 | 0.13 / 0.32 | 50,003.77 / 93,867.16 | 50,175.41 / 94,262.74 |
+
+Four Phase 1 QA-gate bullets:
+
+- **MET — real ingest + query round-trip:** labelled subset indexed 339 files / 3,020 chunks and
+  all four modes scored 30 queries at depth 100 with zero misses.
+- **MET — unchanged re-ingest near-instant:** 8.62 s, `chunks_embedded=0` (<30 s).
+- **MET — reranker measurably reorders RRF:** **30/30** queries had a different top-10 chunk-id
+  sequence under `hybrid+rerank` than under `hybrid`.
+- **MET — latency instrumented:** p50/p95 recorded above for every stage in every mode.
