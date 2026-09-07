@@ -13,6 +13,13 @@ from typing import Any, Sequence
 
 from xyz import __version__
 from xyz.eval.metrics import score
+from xyz.eval.pathscreen import (
+    DEFAULT_THRESHOLD,
+    LANES,
+    PathScreen,
+    paths_from_db,
+    paths_from_git,
+)
 from xyz.index import CodeRankEmbedder, EmptyCorpus, Store
 from xyz.retrieve import Retriever
 from xyz.retrieve.latency import LatencyLog
@@ -31,7 +38,7 @@ def _make_reranker() -> CrossEncoderReranker:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="xyz")
     parser.add_argument("--version", action="version", version=__version__)
-    subparsers = parser.add_subparsers(dest="command", metavar="{ingest,query,eval}")
+    subparsers = parser.add_subparsers(dest="command", metavar="{ingest,query,eval,screen}")
 
     ingest = subparsers.add_parser("ingest", help="ingest a repository")
     ingest.add_argument("--db", required=True)
@@ -56,6 +63,39 @@ def _parser() -> argparse.ArgumentParser:
     )
     evaluate.add_argument("--depth", type=int, default=100)
     evaluate.add_argument("--out", required=True)
+
+    screen = subparsers.add_parser(
+        "screen",
+        help="reject benchmark questions their filename already answers",
+        description=(
+            "Rank paths ALONE — no file contents — for each candidate question, and reject any "
+            "whose gold file lands in the top --threshold. Two lanes run (BM25 over tokenised "
+            "paths, and the embedding model over path strings); either one firing is a rejection. "
+            "Exits 1 if any question is rejected, so it can gate a build."
+        ),
+    )
+    source = screen.add_mutually_exclusive_group(required=True)
+    source.add_argument("--db", help="an index to read the corpus paths from")
+    source.add_argument(
+        "--paths-from-git",
+        metavar="REPO_ROOT",
+        help="read tracked paths straight from a git repo — no index needed, so a candidate can be "
+        "screened in seconds while you are still writing it",
+    )
+    screen.add_argument("--queries", required=True, help="candidate questions, in queries-*.json form")
+    screen.add_argument("--repo", help="restrict the path corpus to one repo in the index (--db only)")
+    screen.add_argument(
+        "--threshold",
+        type=int,
+        default=DEFAULT_THRESHOLD,
+        help=f"reject when a gold path ranks this high or better (default {DEFAULT_THRESHOLD})",
+    )
+    screen.add_argument(
+        "--lexical-only",
+        action="store_true",
+        help="skip the dense lane; faster, but misses synonym leakage (see pathscreen docstring)",
+    )
+    screen.add_argument("--out", help="write the full per-question report here as JSON")
     return parser
 
 
@@ -243,6 +283,62 @@ def _eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def _screen(args: argparse.Namespace) -> int:
+    queries = json.loads(Path(args.queries).read_text(encoding="utf-8"))["queries"]
+    if args.paths_from_git:
+        if args.repo:
+            return _error("--repo filters an index; it does not apply to --paths-from-git")
+        source = args.paths_from_git
+        paths = paths_from_git(source)
+    else:
+        source = args.db
+        paths = paths_from_db(args.db, repo=args.repo)
+    if not paths:
+        return _error(f"no paths in {source}" + (f" for repo {args.repo}" if args.repo else ""))
+
+    embedder = None if args.lexical_only else _make_embedder()
+    results = PathScreen(paths, embedder=embedder, threshold=args.threshold).screen_all(queries)
+
+    answerable = len(results)
+    skipped = len(queries) - answerable
+    rejected = [result for result in results if not result.passed]
+
+    for result in rejected:
+        lanes = ", ".join(
+            f"{name} rank {result.lanes[name].best_rank}" for name in result.rejected_by
+        )
+        print(f"REJECT  {result.query}\n        gold {result.lanes[result.rejected_by[0]].best_path} — {lanes}")
+
+    if args.out:
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(
+            json.dumps(
+                {
+                    "threshold": args.threshold,
+                    "lanes": ["lexical"] if args.lexical_only else list(LANES),
+                    "corpus": {"paths": len(paths), "source": str(Path(source).resolve())},
+                    "counts": {
+                        "screened": answerable,
+                        "passed": answerable - len(rejected),
+                        "rejected": len(rejected),
+                        "skipped_no_answer": skipped,
+                    },
+                    "results": [result.as_dict() for result in results],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    print(
+        f"screened {answerable} answerable ({skipped} no-answer skipped) against {len(paths)} paths; "
+        f"passed {answerable - len(rejected)}, rejected {len(rejected)}"
+    )
+    return 1 if rejected else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Parse the command line and return a process exit status."""
     parser = _parser()
@@ -254,6 +350,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     try:
-        return {"ingest": _ingest, "query": _query, "eval": _eval}[args.command](args)
+        return {"ingest": _ingest, "query": _query, "eval": _eval, "screen": _screen}[
+            args.command
+        ](args)
     except (OSError, ValueError) as exc:
         return _error(str(exc))
