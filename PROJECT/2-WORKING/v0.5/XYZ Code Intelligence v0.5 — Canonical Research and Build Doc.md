@@ -32,7 +32,7 @@ folder as evidence appendices; per-claim citations live there.
 
 | What was just completed | What's next |
 |---|---|
-| Act 1 delivered (Phases 0-1: `xyz` package, chunkers, store, hybrid retrieval, round-trip — PR #15). Phases 2-5 rescoped after a ponytail/debug-mantra audit (2026-09-07). | Phase 2: build the ~70-question **harder** frozen set, now including the PHP/WordPress repos. |
+| Act 1 delivered (Phases 0-1: `xyz` package, chunkers, store, hybrid retrieval, round-trip — PR #15). Phases 2-5 rescoped after a ponytail/debug-mantra audit (2026-09-07). Benchmark size and shape settled from defaults and recorded in `MEASUREMENTS/BASELINE.md` (PR #16). | Phase 2 (#17): build the **frozen 50** plus a disjoint 20-question dev split, screened so no question is answerable from its filename, now including the PHP/WordPress repos. |
 
 ## Table of contents
 
@@ -85,8 +85,11 @@ same five conclusions:
 | CoRNStack license | Unstated on the HF card | Apache 2.0 | Unverified — confirm before training on it (open question below). |
 | Fine-tuned BGE-small in the bake-off | Excluded (wrong base, full stop) | Kept as a candidate to test whether LoRA overcomes its limits | Keep untuned BGE-small as a control only. Do not spend training budget proving what both docs already concluded. |
 
-Benchmark slice counts differed slightly between sources; the merged canonical design in Phase 2
-uses Hyperagent's 250-query/9-slice frame with Perplexity's metric set and decision rule.
+Benchmark slice counts differed slightly between sources. The merged design originally took
+Hyperagent's 250-query/9-slice frame with Perplexity's metric set and decision rule; **that frame was
+superseded on 2026-09-07** once Act 1 measured the actual failure mode. See Phase 2: the problem is
+saturation, not sample size, so the set is 50 questions selected for difficulty. Perplexity's metric
+set and decision rule survive unchanged.
 
 ## Target architecture
 
@@ -194,9 +197,13 @@ of its architecture (2026-08-28):
 > issue supersedes this doc on posture: XYZ **absorbs** Ask-Self's Python pipeline (cache, drift
 > detection, revision tracking, harness config) rather than rewriting it, and swaps only the
 > embedding and ranking layers. Phase 0 steps 2-3 and all of Phase 1 are executed as **Act 1** of #11
-> via [GH-11-ACT1-HYBRID-RETRIEVAL.md](GH-11-ACT1-HYBRID-RETRIEVAL.md). Phase 2's 250-query benchmark
-> is deferred: the existing 30-query set is saturated (#11 caveat 2) and growing it is human
-> labelling work. Phases 3-5 stand as written.
+> via [GH-11-ACT1-HYBRID-RETRIEVAL.md](GH-11-ACT1-HYBRID-RETRIEVAL.md).
+>
+> **Superseded on Phase 2 (2026-09-07).** This note originally deferred a 250-query benchmark on the
+> grounds that the existing 30-query set is saturated (#11 caveat 2) and growing it is human
+> labelling work. Both halves were right about the facts and wrong about the remedy: saturation is
+> not fixed by volume. Phase 2 is now the **frozen 50** selected for difficulty and tracked in #17.
+> Phases 3-5 were themselves rescoped on the same date; they no longer "stand as written".
 
 ## Phase 0 — Decision lock and repo scaffolding
 
@@ -384,6 +391,12 @@ Everything else stays where it is and keeps working. Then:
    they call.
 5. Retire the duplicate scorers: `ask_self_eval.py` and `score_retrieval.py` call
    `xyz/eval/metrics.py` rather than reimplement it.
+6. Delete the known footguns in place. Under the old plan these sat in **Sunset (do not port)** and
+   would have died with the repo; under absorption Ask-Self *stays*, so "do not port" retires
+   nothing — each one has to be removed deliberately. Concretely: the globally exported
+   `ASK_SELF_PATH` (which made every repo query Ask-Self's own index), the `db_filename` vs
+   `db_path` footgun, the disabled Qwen provider paths, and the copied-not-linked slash commands
+   that go stale on upgrade.
 
 **Correction to issue #11 (verified 2026-09-07).** It states that `fetchMergedPRs` and
 `buildArchitectureSummary` must be *"ported into Python before deletion"*. Both are wrong:

@@ -14,7 +14,7 @@
 
 | What was just completed | What's next |
 |---|---|
-| GH-11 Act 1 delivered — `xyz` package, chunkers, store, hybrid retrieval and a real round-trip, all 5 marathon phases approved, QA passed (PR #15); canonical Phases 2-5 rescoped (2026-09-07). | Phase 2: the ~70-question **harder** frozen set, now including the PHP/WordPress repos. Act 1 measured dense-only ahead of hybrid+rerank, so the set must actually discriminate. |
+| GH-11 Act 1 delivered — `xyz` package, chunkers, store, hybrid retrieval and a real round-trip, all 5 marathon phases approved, QA passed (PR #15); canonical Phases 2-5 rescoped, and the benchmark's size and shape settled from defaults into `MEASUREMENTS/BASELINE.md` (PR #16, 2026-09-07). | Phase 2 (#17): the **frozen 50** plus a disjoint 20-question dev split, every answerable question screened so its filename does not give the answer away, now including the PHP/WordPress repos. Act 1 measured dense-only ahead of hybrid+rerank on a saturated set, so the new set must actually discriminate — at least one arm has to score below R@3 = 1.000. |
 
 ## Ledger
 
