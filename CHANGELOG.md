@@ -3,6 +3,41 @@
 Newest-first, dated end-of-iteration record. One entry per substantive iteration: what changed,
 why, and the verification. See `PROJECT/PDDA.md` for the full contract.
 
+## 2026-09-07 (evening)
+
+### The path-only screen, and the red control that proves it works
+
+Phase 2 (#17) is defined by one rule — zero name-carried questions, enforced by a path-only screen.
+This makes the rule runnable, so screening is a command rather than a judgment call per question.
+
+- Added `xyz screen` (`xyz/eval/pathscreen.py`). It retrieves over **paths alone**, no file
+  contents, and rejects a candidate when a gold path lands in the top 3. Two lanes run and either
+  firing is a rejection: BM25 over tokenised paths, and the real embedding model over path strings.
+  Paths split on camelCase as well as separators, because a WordPress or JS corpus hides its meaning
+  in identifiers like `getUserById` that a separator-only tokeniser leaves welded shut. Exits 1 on
+  any rejection, so it can gate a build.
+- **Red control: the screen rejects 30/30 of the known-saturated set**, and the dense lane caught 3
+  that BM25 never retrieved at all — "timezone and time formatting helpers" for `app/timefmt.py` is
+  the shape of it, where query and path share no token but mean the same thing. A lexical-only
+  screen would have passed those three into the frozen set. Numbers, and the two caveats that would
+  overturn them, in `MEASUREMENTS/runs/2026-09-07-pathscreen-redcontrol.md`.
+- Added `--paths-from-git`, so a candidate can be screened without an index. During labelling you
+  iterate on questions, not on the corpus; this turns a 10-minute ingest into seconds and makes the
+  red control reproducible as a single command.
+- **Indexed the first PHP/WordPress repo** — `universal-child-theme-oct-2024`, 143 files / 1,341
+  chunks / 9m 48s on CPU, all 47 PHP files in. Two findings worth carrying into Phase 2: the
+  "HTML/WP-template" language quota has to be read as **PHP** templates (the repo holds exactly one
+  `.html` file, while `archive.php` and `header.php` are the templates), and peak RSS reached
+  12.9 GB.
+- **One PHP file fails Tree-sitter parsing** because `tree-sitter-php` 1.16.1 rejects
+  `const NAMESPACE = ...`, which PHP 7 permits. Measured across both WordPress repos it is **1 of
+  120 files** (0 of 73 in the second), so it is isolated and does not undercut the premise that
+  Tree-sitter chunking is XYZ's genuine improvement over Ask-Self's regex chunkers. Taking the
+  number mattered more than assuming it.
+
+**Verification:** `validate: OK` — 65 tests (20 for the screen, including four that drive the CLI
+after a missing import passed every unit test and still crashed the command).
+
 ## 2026-09-07 (latest)
 
 ### Post-merge consistency sweep: stale numbers, a dropped cleanup step, and the verified env

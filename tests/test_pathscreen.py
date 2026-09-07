@@ -205,3 +205,103 @@ def test_as_dict_round_trips_to_json():
     screen = PathScreen(CORPUS)
     payload = screen.screen("keycloak admin operations", ["app/api/keycloak_admin.py"]).as_dict()
     assert json.loads(json.dumps(payload))["verdict"] == "reject"
+
+
+# --- CLI wiring -----------------------------------------------------------------------
+# The unit tests above exercise the screen; these exercise the `xyz screen` subcommand end to end.
+# A missing import in cli.py passed every test above and still crashed the command, so the CLI path
+# needs its own coverage. `--lexical-only` keeps these tests model-free.
+
+
+def _write_queries(tmp_path, questions):
+    path = tmp_path / "queries.json"
+    path.write_text(json.dumps({"repo": "fixture", "queries": questions}), encoding="utf-8")
+    return str(path)
+
+
+def _fixture_repo(tmp_path):
+    """A real git repo, because --paths-from-git shells out to `git ls-files`."""
+    import subprocess
+
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "app").mkdir()
+    (repo / "scripts" / "probe_klaviyo_rate_limits.py").write_text("x = 1\n")
+    (repo / "app" / "order.py").write_text("y = 2\n")
+    for command in (
+        ["git", "init", "-q"],
+        ["git", "add", "-A"],
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"],
+    ):
+        subprocess.run(command, cwd=repo, check=True, capture_output=True)
+    return str(repo)
+
+
+def test_cli_screen_from_git_exits_1_when_a_question_is_rejected(tmp_path, capsys):
+    from xyz.cli import main
+
+    queries = _write_queries(
+        tmp_path,
+        [{"q": "probe klaviyo rate limits", "relevant": ["scripts/probe_klaviyo_rate_limits.py"]}],
+    )
+    out = tmp_path / "report.json"
+    code = main(
+        [
+            "screen",
+            "--paths-from-git", _fixture_repo(tmp_path),
+            "--queries", queries,
+            "--lexical-only",
+            "--out", str(out),
+        ]
+    )
+    assert code == 1, "a rejected question must fail the command so it can gate a build"
+    assert "REJECT" in capsys.readouterr().out
+
+    report = json.loads(out.read_text())
+    assert report["counts"] == {
+        "screened": 1,
+        "passed": 0,
+        "rejected": 1,
+        "skipped_no_answer": 0,
+    }
+    assert report["lanes"] == ["lexical"]
+
+
+def test_cli_screen_exits_0_when_everything_passes(tmp_path):
+    from xyz.cli import main
+
+    queries = _write_queries(
+        tmp_path, [{"q": "where do we decide a customer has churned", "relevant": ["app/order.py"]}]
+    )
+    code = main(
+        [
+            "screen",
+            "--paths-from-git", _fixture_repo(tmp_path),
+            "--queries", queries,
+            "--lexical-only",
+        ]
+    )
+    assert code == 0
+
+
+def test_cli_screen_rejects_repo_filter_with_git_source(tmp_path):
+    from xyz.cli import main
+
+    queries = _write_queries(tmp_path, [{"q": "anything", "relevant": ["app/order.py"]}])
+    code = main(
+        [
+            "screen",
+            "--paths-from-git", _fixture_repo(tmp_path),
+            "--queries", queries,
+            "--repo", "some-repo",
+            "--lexical-only",
+        ]
+    )
+    assert code == 2, "--repo filters an index and is meaningless against a git working tree"
+
+
+def test_cli_screen_requires_exactly_one_path_source(tmp_path):
+    from xyz.cli import main
+
+    queries = _write_queries(tmp_path, [{"q": "anything", "relevant": ["app/order.py"]}])
+    assert main(["screen", "--queries", queries]) == 2

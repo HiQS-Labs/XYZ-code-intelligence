@@ -236,3 +236,28 @@ def paths_from_db(db_path: str, *, repo: str | None = None) -> list[str]:
         return [str(row[0]) for row in rows]
     finally:
         connection.close()
+
+
+def paths_from_git(repo_root: str) -> list[str]:
+    """Read a repository's tracked paths without indexing it.
+
+    The screen only ever looks at paths, so it does not need an index — and during labelling you
+    iterate on questions, not on the corpus. Reading straight from git makes screening a candidate
+    cost seconds instead of an ingest.
+
+    The path set is git's, not the indexer's, so it is a superset: it includes files the include
+    list would skip (images, lockfiles). For screening that is the safe direction — a larger
+    candidate pool can only push a gold path *down* the ranking, so this never invents a rejection
+    that the indexed corpus would not also produce.
+    """
+
+    import subprocess
+
+    completed = subprocess.run(
+        ["git", "ls-files"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [line for line in completed.stdout.splitlines() if line]

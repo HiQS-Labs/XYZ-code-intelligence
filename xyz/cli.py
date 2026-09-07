@@ -13,7 +13,13 @@ from typing import Any, Sequence
 
 from xyz import __version__
 from xyz.eval.metrics import score
-from xyz.eval.pathscreen import DEFAULT_THRESHOLD, LANES, PathScreen, paths_from_db
+from xyz.eval.pathscreen import (
+    DEFAULT_THRESHOLD,
+    LANES,
+    PathScreen,
+    paths_from_db,
+    paths_from_git,
+)
 from xyz.index import CodeRankEmbedder, EmptyCorpus, Store
 from xyz.retrieve import Retriever
 from xyz.retrieve.latency import LatencyLog
@@ -68,9 +74,16 @@ def _parser() -> argparse.ArgumentParser:
             "Exits 1 if any question is rejected, so it can gate a build."
         ),
     )
-    screen.add_argument("--db", required=True, help="an index to read the corpus paths from")
+    source = screen.add_mutually_exclusive_group(required=True)
+    source.add_argument("--db", help="an index to read the corpus paths from")
+    source.add_argument(
+        "--paths-from-git",
+        metavar="REPO_ROOT",
+        help="read tracked paths straight from a git repo — no index needed, so a candidate can be "
+        "screened in seconds while you are still writing it",
+    )
     screen.add_argument("--queries", required=True, help="candidate questions, in queries-*.json form")
-    screen.add_argument("--repo", help="restrict the path corpus to one repo in the index")
+    screen.add_argument("--repo", help="restrict the path corpus to one repo in the index (--db only)")
     screen.add_argument(
         "--threshold",
         type=int,
@@ -272,9 +285,16 @@ def _eval(args: argparse.Namespace) -> int:
 
 def _screen(args: argparse.Namespace) -> int:
     queries = json.loads(Path(args.queries).read_text(encoding="utf-8"))["queries"]
-    paths = paths_from_db(args.db, repo=args.repo)
+    if args.paths_from_git:
+        if args.repo:
+            return _error("--repo filters an index; it does not apply to --paths-from-git")
+        source = args.paths_from_git
+        paths = paths_from_git(source)
+    else:
+        source = args.db
+        paths = paths_from_db(args.db, repo=args.repo)
     if not paths:
-        return _error(f"no paths in {args.db}" + (f" for repo {args.repo}" if args.repo else ""))
+        return _error(f"no paths in {source}" + (f" for repo {args.repo}" if args.repo else ""))
 
     embedder = None if args.lexical_only else _make_embedder()
     results = PathScreen(paths, embedder=embedder, threshold=args.threshold).screen_all(queries)
@@ -297,7 +317,7 @@ def _screen(args: argparse.Namespace) -> int:
                 {
                     "threshold": args.threshold,
                     "lanes": ["lexical"] if args.lexical_only else list(LANES),
-                    "corpus": {"paths": len(paths), "db": str(Path(args.db).resolve())},
+                    "corpus": {"paths": len(paths), "source": str(Path(source).resolve())},
                     "counts": {
                         "screened": answerable,
                         "passed": answerable - len(rejected),
