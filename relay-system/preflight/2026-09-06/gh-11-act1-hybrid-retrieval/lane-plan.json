@@ -1,0 +1,29 @@
+{
+  "orchestrator_owned": [],
+  "codex_lane": [
+    "GUIDING-PRINCIPLES.md",
+    "pyproject.toml",
+    "validate.sh",
+    "xyz/",
+    "tests/",
+    "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
+    "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+  ],
+  "agy_lane": [],
+  "effective_artifacts": [
+    "GUIDING-PRINCIPLES.md",
+    "pyproject.toml",
+    "validate.sh",
+    "xyz/",
+    "tests/",
+    "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
+    "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+  ],
+  "inferred_test_artifacts": [],
+  "inferred_test_helpers": [],
+  "fs_touching_tests": [],
+  "agy_review_default": true,
+  "coupling_warning": null,
+  "parallelizable": true,
+  "single_lane_only": false
+}

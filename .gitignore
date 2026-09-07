@@ -1,5 +1,11 @@
-PROJECT/PDDA-ACTIVITY.jsonl
+*.pyc
+.DS_Store
 .pdda-gh-state.tsv
+.relay-scratch/
+.venv/
 .xyz/
 /.tick/
-.venv/
+/temp/
+PROJECT/PDDA-ACTIVITY.jsonl
+__pycache__/
+temp/

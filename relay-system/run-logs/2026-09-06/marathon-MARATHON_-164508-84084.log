@@ -1,0 +1,244 @@
+marathon: run log: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/run-logs/2026-09-06/marathon-MARATHON_-164508-84084.log
+marathon: plan: PROJECT/2-WORKING/v0.5/GH-11-marathon/MARATHON.yaml — 5 phase(s) in execution order
+marathon: ── phase 1/5: gh11-p0-scaffold (reviewer=agy, round-cap=5, artifact=GUIDING-PRINCIPLES.md,pyproject.toml,validate.sh,xyz/,tests/, turn-timeout=1200s) ──
+marathon-drive: phase gh11-p0-scaffold already reached a terminal relay (STATUS: Approved, token done) — skipping render/reseed, re-running only the pre-advance gate
+marathon-drive: relay approved — running pre-advance gate: bash '/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/validate.sh'
+== env preflight
+env ok: 3.11.15 prelaunch 2026-09-06T23:45:01Z sqlite-vec v0.1.9
+== PDDA deterministic checks (PDDA_MODE=full so errors block; the repo's .pdda-mode stays observe)
+SUMMARY [pdda-check-frontmatter] errors=0 warns=0 info=0
+SUMMARY [pdda-check-status-table] errors=0 warns=0 info=0
+SUMMARY [pdda-check-roadmap] errors=0 warns=0 info=0
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/BGE Small vs Code-Capable Embeddings — Decision Report.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Code Embedding Models — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Embedding Fine-Tuning Training Pipelines — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/NL-to-Code Retrieval Datasets — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+SUMMARY [pdda-check-roadmap-coverage] errors=0 warns=0 info=9
+SUMMARY [pdda-check-hardcoded-paths] errors=0 warns=0 info=0
+== package presence (unconditional after gh11-p0-scaffold)
+== import smoke (exact version)
+== pytest
+...........................                                              [100%]
+27 passed in 0.84s
+validate: OK
+marathon-drive: gate-guard: gate exit 0 after 9s — peak group RSS 403MB (tier full; caps: RSS 8192MB, wall 1800s, CPU 1200s)
+marathon-drive: transcript saved: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/2026-09-06/marathon-gh11-p0-scaffold-234518.md
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p0-scaffold-complete boundary — compressor=8099MB, swap_free=424MB
+marathon-drive: phase gh11-p0-scaffold complete — lane_already_satisfied, reviewer approved, gate passed
+marathon: ── phase 2/5: gh11-p1-chunkers (reviewer=agy, round-cap=7, artifact=xyz/,tests/,pyproject.toml, turn-timeout=1800s) ──
+marathon-drive: phase gh11-p1-chunkers already reached a terminal relay (STATUS: Approved, token done) — skipping render/reseed, re-running only the pre-advance gate
+marathon-drive: relay approved — running pre-advance gate: bash '/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/validate.sh'
+== env preflight
+env ok: 3.11.15 prelaunch 2026-09-06T23:45:01Z sqlite-vec v0.1.9
+== PDDA deterministic checks (PDDA_MODE=full so errors block; the repo's .pdda-mode stays observe)
+SUMMARY [pdda-check-frontmatter] errors=0 warns=0 info=0
+SUMMARY [pdda-check-status-table] errors=0 warns=0 info=0
+SUMMARY [pdda-check-roadmap] errors=0 warns=0 info=0
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/BGE Small vs Code-Capable Embeddings — Decision Report.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Code Embedding Models — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Embedding Fine-Tuning Training Pipelines — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/NL-to-Code Retrieval Datasets — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+SUMMARY [pdda-check-roadmap-coverage] errors=0 warns=0 info=9
+SUMMARY [pdda-check-hardcoded-paths] errors=0 warns=0 info=0
+== package presence (unconditional after gh11-p0-scaffold)
+== import smoke (exact version)
+== pytest
+...........................                                              [100%]
+27 passed in 0.91s
+validate: OK
+marathon-drive: gate-guard: gate exit 0 after 10s — peak group RSS 390MB (tier full; caps: RSS 8192MB, wall 1800s, CPU 1200s)
+marathon-drive: transcript saved: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/2026-09-06/marathon-gh11-p1-chunkers-234530.md
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p1-chunkers-complete boundary — compressor=8076MB, swap_free=424MB
+marathon-drive: phase gh11-p1-chunkers complete — lane_already_satisfied, reviewer approved, gate passed
+marathon: ── phase 3/5: gh11-p2-store (reviewer=agy, round-cap=7, artifact=xyz/,tests/,pyproject.toml, turn-timeout=1800s) ──
+marathon-drive: WARNING: workspace is not clean — an autonomous builder can be distracted by stray files.
+marathon-drive:   • relay-system/run-logs/
+marathon-drive: relay file committed: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/marathon-system/gh11-act1-hybrid-retrieval--gh11-p2-store/RELAY.md
+marathon-drive: reconciled leaked open handoff: MARATHON-GH11-P2-STORE-TURN (cleared stale reservation for codex)
+marathon-drive: tick token seeded: MARATHON-GH11-P2-STORE-TURN → codex
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p2-store-start boundary — compressor=8075MB, swap_free=424MB
+marathon-drive: phase start: running relay-drive --round-cap 7
+codex-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.wn7xKd)
+codex-turn: committed codex turn (file-scoped, no push)
+codex-turn: dependency.drift — codex changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/project.js (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/events.js (0 lines); signalled for the next turn
+agy-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.j54yrM)
+agy-turn: committed agy turn (file-scoped, no push)
+agy-turn: dependency.drift — agy changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/project.js (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/events.js (0 lines); signalled for the next turn
+relay-drive: relay terminated (STATUS: Approved, token done) after 2 turn(s)
+marathon-drive: relay approved — running pre-advance gate: bash '/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/validate.sh'
+== env preflight
+env ok: 3.11.15 prelaunch 2026-09-06T23:45:01Z sqlite-vec v0.1.9
+== PDDA deterministic checks (PDDA_MODE=full so errors block; the repo's .pdda-mode stays observe)
+SUMMARY [pdda-check-frontmatter] errors=0 warns=0 info=0
+SUMMARY [pdda-check-status-table] errors=0 warns=0 info=0
+SUMMARY [pdda-check-roadmap] errors=0 warns=0 info=0
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/BGE Small vs Code-Capable Embeddings — Decision Report.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Code Embedding Models — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Embedding Fine-Tuning Training Pipelines — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/NL-to-Code Retrieval Datasets — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+SUMMARY [pdda-check-roadmap-coverage] errors=0 warns=0 info=9
+SUMMARY [pdda-check-hardcoded-paths] errors=0 warns=0 info=0
+== package presence (unconditional after gh11-p0-scaffold)
+== import smoke (exact version)
+== pytest
+...........................                                              [100%]
+27 passed in 0.94s
+validate: OK
+marathon-drive: gate-guard: gate exit 0 after 11s — peak group RSS 389MB (tier full; caps: RSS 8192MB, wall 1800s, CPU 1200s)
+marathon-drive: transcript saved: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/2026-09-06/marathon-gh11-p2-store-235256.md
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p2-store-complete boundary — compressor=8340MB, swap_free=424MB
+marathon-drive: phase gh11-p2-store complete — STATUS: Approved, gate passed
+
+marathon-drive: end-of-run cost summary (tick analyze) —
+--- cost ---
+run type: unspecified
+tokens: ≥0 total (≥0 in / ≥0 out) — PARTIAL, floor only: 0/3 done-tasks instrumented
+human minutes (self-reported): 0
+wall-clock (run window): 5h 41m
+per done-task: ≥0 tokens, 1h 53m wall-clock
+memory: compressor peak: 8340MB, swap free min: 424MB
+  turn peak RSS: codex: 234MB peak RSS, agy: 226MB peak RSS
+
+marathon: ── phase 4/5: gh11-p3-retrieve (reviewer=agy, round-cap=7, artifact=xyz/,tests/,pyproject.toml, turn-timeout=1800s) ──
+marathon-drive: WARNING: workspace is not clean — an autonomous builder can be distracted by stray files.
+marathon-drive:   • relay-system/run-logs/
+marathon-drive: relay file committed: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/marathon-system/gh11-act1-hybrid-retrieval--gh11-p3-retrieve/RELAY.md
+marathon-drive: tick token seeded: MARATHON-GH11-P3-RETRIEVE-TURN → codex
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p3-retrieve-start boundary — compressor=8338MB, swap_free=424MB
+marathon-drive: phase start: running relay-drive --round-cap 7
+codex-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.2jC6sw)
+codex-turn: committed codex turn (file-scoped, no push)
+codex-turn: dependency.drift — codex changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/project.js (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/events.js (0 lines); signalled for the next turn
+agy-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.dwsF7j)
+agy-turn: committed agy turn (file-scoped, no push)
+agy-turn: dependency.drift — agy changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/project.js (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/events.js (0 lines); signalled for the next turn
+relay-drive: relay terminated (STATUS: Approved, token done) after 2 turn(s)
+marathon-drive: relay approved — running pre-advance gate: bash '/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/validate.sh'
+== env preflight
+env ok: 3.11.15 prelaunch 2026-09-06T23:45:01Z sqlite-vec v0.1.9
+== PDDA deterministic checks (PDDA_MODE=full so errors block; the repo's .pdda-mode stays observe)
+SUMMARY [pdda-check-frontmatter] errors=0 warns=0 info=0
+SUMMARY [pdda-check-status-table] errors=0 warns=0 info=0
+SUMMARY [pdda-check-roadmap] errors=0 warns=0 info=0
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/BGE Small vs Code-Capable Embeddings — Decision Report.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Code Embedding Models — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Embedding Fine-Tuning Training Pipelines — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/NL-to-Code Retrieval Datasets — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+SUMMARY [pdda-check-roadmap-coverage] errors=0 warns=0 info=9
+SUMMARY [pdda-check-hardcoded-paths] errors=0 warns=0 info=0
+== package presence (unconditional after gh11-p0-scaffold)
+== import smoke (exact version)
+== pytest
+...............................................................          [100%]
+63 passed in 1.12s
+validate: OK
+marathon-drive: gate-guard: gate exit 0 after 10s — peak group RSS 401MB (tier full; caps: RSS 8192MB, wall 1800s, CPU 1200s)
+marathon-drive: transcript saved: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/2026-09-07/marathon-gh11-p3-retrieve-000156.md
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p3-retrieve-complete boundary — compressor=8387MB, swap_free=424MB
+marathon-drive: phase gh11-p3-retrieve complete — STATUS: Approved, gate passed
+
+marathon-drive: end-of-run cost summary (tick analyze) —
+--- cost ---
+run type: unspecified
+tokens: ≥0 total (≥0 in / ≥0 out) — PARTIAL, floor only: 0/4 done-tasks instrumented
+human minutes (self-reported): 0
+wall-clock (run window): 5h 50m
+per done-task: ≥0 tokens, 1h 27m wall-clock
+memory: compressor peak: 8387MB, swap free min: 424MB
+  turn peak RSS: codex: 234MB peak RSS, agy: 226MB peak RSS
+
+marathon: ── phase 5/5: gh11-p4-roundtrip (reviewer=agy, round-cap=7, artifact=xyz/,tests/,pyproject.toml,PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md,PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md, turn-timeout=7200s) ──
+marathon-drive: WARNING: workspace is not clean — an autonomous builder can be distracted by stray files.
+marathon-drive:   • relay-system/run-logs/
+marathon-drive: relay file committed: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/marathon-system/gh11-act1-hybrid-retrieval--gh11-p4-roundtrip/RELAY.md
+marathon-drive: tick token seeded: MARATHON-GH11-P4-ROUNDTRIP-TURN → codex
+marathon-drive: warn: host free swap is critically low (424MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p4-roundtrip-start boundary — compressor=8403MB, swap_free=424MB
+marathon-drive: phase start: running relay-drive --round-cap 7
+codex-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.dab2nc)
+codex-turn: committed codex turn (file-scoped, no push)
+codex-turn: dependency.drift — codex changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/project.js (0 lines); signalled for the next turn
+codex-turn: dependency.drift — codex changed src/events.js (0 lines); signalled for the next turn
+agy-turn: worktree isolation ON (/var/folders/69/3l_82qtj7fzglnt_jjg07jh40000gn/T//rtl-wt.RTzWsV)
+agy-turn: committed agy turn (file-scoped, no push)
+agy-turn: dependency.drift — agy changed relay-automation/relay-turn-lib.sh (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/project.js (0 lines); signalled for the next turn
+agy-turn: dependency.drift — agy changed src/events.js (0 lines); signalled for the next turn
+relay-drive: relay terminated (STATUS: Approved, token done) after 2 turn(s)
+marathon-drive: relay approved — running pre-advance gate: bash '/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/validate.sh'
+== env preflight
+env ok: 3.11.15 prelaunch 2026-09-06T23:45:01Z sqlite-vec v0.1.9
+== PDDA deterministic checks (PDDA_MODE=full so errors block; the repo's .pdda-mode stays observe)
+SUMMARY [pdda-check-frontmatter] errors=0 warns=0 info=0
+SUMMARY [pdda-check-status-table] errors=0 warns=0 info=0
+SUMMARY [pdda-check-roadmap] errors=0 warns=0 info=0
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/BGE Small vs Code-Capable Embeddings — Decision Report.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Code Embedding Models — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/Embedding Fine-Tuning Training Pipelines — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p0-scaffold.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p1-chunkers.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p2-store.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p3-retrieve.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/GH-11-marathon/brief-p4-roundtrip-eval.md:1 roadmap coverage check skipped because roadmap_exempt=true
+INFO [pdda-check-roadmap-coverage] PROJECT/2-WORKING/v0.5/NL-to-Code Retrieval Datasets — Full Evidence Table.md:1 roadmap coverage check skipped because roadmap_exempt=true
+SUMMARY [pdda-check-roadmap-coverage] errors=0 warns=0 info=9
+SUMMARY [pdda-check-hardcoded-paths] errors=0 warns=0 info=0
+== package presence (unconditional after gh11-p0-scaffold)
+== import smoke (exact version)
+== pytest
+........................................................................ [ 66%]
+....................................                                     [100%]
+108 passed in 1.45s
+validate: OK
+marathon-drive: gate-guard: gate exit 0 after 12s — peak group RSS 386MB (tier full; caps: RSS 8192MB, wall 1800s, CPU 1200s)
+marathon-drive: transcript saved: /Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/relay-system/2026-09-07/marathon-gh11-p4-roundtrip-011836.md
+marathon-drive: warn: host free swap is critically low (998MB < 1024MB)
+marathon-drive: memory-telemetry: phase gh11-p4-roundtrip-complete boundary — compressor=7236MB, swap_free=998MB
+marathon-drive: phase gh11-p4-roundtrip complete — STATUS: Approved, gate passed
+
+marathon-drive: end-of-run cost summary (tick analyze) —
+--- cost ---
+run type: unspecified
+tokens: ≥0 total (≥0 in / ≥0 out) — PARTIAL, floor only: 0/5 done-tasks instrumented
+human minutes (self-reported): 0
+wall-clock (run window): 7h 6m
+per done-task: ≥0 tokens, 1h 25m wall-clock
+memory: compressor peak: 8403MB, swap free min: 424MB
+  turn peak RSS: codex: 234MB peak RSS, agy: 226MB peak RSS
+
+marathon: marathon complete — all 5 phase(s) approved

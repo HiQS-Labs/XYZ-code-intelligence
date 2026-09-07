@@ -1,0 +1,37 @@
+{
+  "fetch_ok": true,
+  "upstream": "origin/v0.5/embedding-eval-coderankembed-vs-gemini",
+  "ahead": 1,
+  "behind": 0,
+  "dirty": true,
+  "stale_index_lock": false,
+  "stale_index_lock_path": null,
+  "stale_index_lock_warning": null,
+  "evaluated_ref": "marathon/gh11-act1-hybrid-retrieval-2026-09-05",
+  "evaluated_ref_commit": "eb4f3d061be363f95540fe88e32da472b46e3158",
+  "checkout_matches_ref": true,
+  "head_behind_ref": 0,
+  "candidate_state": "ready",
+  "probes": [
+    {
+      "type": "path_absent",
+      "path": "pyproject.toml",
+      "verdict": "unfixed"
+    },
+    {
+      "type": "path_absent",
+      "path": "xyz/",
+      "verdict": "unfixed"
+    },
+    {
+      "type": "path_absent",
+      "path": "tests/",
+      "verdict": "unfixed"
+    },
+    {
+      "type": "path_absent",
+      "path": "xyz/retrieve/pipeline.py",
+      "verdict": "unfixed"
+    }
+  ]
+}

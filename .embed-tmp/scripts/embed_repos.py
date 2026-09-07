@@ -77,11 +77,16 @@ def rss_mb() -> float:
     """
     return _PROC.memory_info().rss / (1024 * 1024)
 
+_REPO_ROOT = "/Users/noelsaw/Documents/GitHub Repos"
+
 REPOS = {
-    "rebalanceOS": "/Users/noelsaw/Documents/GH Repos/rebalanceOS",
-    "LTVera-Pandas": "/Users/noelsaw/Documents/GH Repos/LTVera-Pandas",
-    "aegis-sleuth-slack-bot": "/Users/noelsaw/Documents/GH Repos/aegis-sleuth-slack-bot",
-    "XYZ-forge": "/Users/noelsaw/Documents/GH Repos/XYZ-forge",
+    # NOTE: rebalanceOS, not rebalance-OS — a same-named empty stub containing only
+    # temp/ sits beside it. Pointed at the stub, this repo yields 0 chunks and
+    # process_repo prints "[skip] no chunks produced", silently omitting it.
+    "rebalanceOS": f"{_REPO_ROOT}/rebalanceOS",
+    "LTVera-Pandas": f"{_REPO_ROOT}/LTVera-Pandas",
+    "aegis-sleuth-slack-bot": f"{_REPO_ROOT}/AEGIS-Sleuth-Slackbot",
+    "XYZ-forge": f"{_REPO_ROOT}/XYZ-forge",
 }
 
 INCLUDE_EXT = {".py", ".js", ".ts", ".tsx", ".jsx", ".php", ".md", ".go", ".rb", ".sh"}

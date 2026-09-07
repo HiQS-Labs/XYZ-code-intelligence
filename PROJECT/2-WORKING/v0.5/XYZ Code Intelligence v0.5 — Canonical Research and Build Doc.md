@@ -2,7 +2,7 @@
 title: XYZ Code Intelligence v0.5 — Canonical Research and Build Doc
 status: active
 created: 2026-08-28
-updated: 2026-08-28
+updated: 2026-09-07
 owner: Noel Saw
 goal: Synthesize the Perplexity and Hyperagent v0.5 research into one canonical plan for building the XYZ code intelligence system and sunsetting Ask-Self.
 effort: 4
@@ -19,7 +19,7 @@ context_tags: [embeddings, retrieval, rag, ask-self-sunset, apple-silicon]
 non_goals:
   - Cloud-hosted embedding APIs as the primary lane (local-first is the constraint)
   - Fine-tuning before the frozen benchmark exists
-  - Porting Ask-Self's synthesis/answer layer unchanged
+  - Rebuilding what Ask-Self already provides provider-agnostically (synthesis, citations, history, PR ingest, registry) — XYZ swaps its embed + KNN functions instead
 ---
 
 # XYZ Code Intelligence v0.5 — Canonical Research and Build Doc
@@ -32,7 +32,7 @@ folder as evidence appendices; per-claim citations live there.
 
 | What was just completed | What's next |
 |---|---|
-| Synthesized Perplexity + Hyperagent research into this canonical doc (2026-08-28). | Phase 1: stand up AST/Tree-sitter chunking + hybrid retrieval skeleton. |
+| Act 1 delivered (Phases 0-1: `xyz` package, chunkers, store, hybrid retrieval, round-trip — PR #15). Phases 2-5 rescoped after a ponytail/debug-mantra audit (2026-09-07). | Phase 2: build the ~70-question **harder** frozen set, now including the PHP/WordPress repos. |
 
 ## Table of contents
 
@@ -47,8 +47,8 @@ folder as evidence appendices; per-claim citations live there.
 - [Phase 1 — Chunking + hybrid retrieval skeleton](#phase-1--chunking--hybrid-retrieval-skeleton)
 - [Phase 2 — Frozen private benchmark](#phase-2--frozen-private-benchmark)
 - [Phase 3 — Model bake-off](#phase-3--model-bake-off)
-- [Phase 4 — Conditional fine-tuning](#phase-4--conditional-fine-tuning)
-- [Phase 5 — Ask-Self sunset and migration](#phase-5--ask-self-sunset-and-migration)
+- [Phase 4 — Conditional fine-tuning — DEFERRED](#phase-4--conditional-fine-tuning--deferred)
+- [Phase 5 — Ask-Self absorption](#phase-5--ask-self-absorption-was-sunset-and-migration)
 - [Open questions and risks](#open-questions-and-risks)
 
 ## Consensus verdict
@@ -190,6 +190,14 @@ of its architecture (2026-08-28):
   exported `ASK_SELF_PATH` (made every repo query Ask-Self's own index), and copied-not-linked
   slash commands that go stale on upgrade.
 
+> **Reconciliation with issue #11 (rewritten 2026-08-30; note added 2026-09-05).** The release
+> issue supersedes this doc on posture: XYZ **absorbs** Ask-Self's Python pipeline (cache, drift
+> detection, revision tracking, harness config) rather than rewriting it, and swaps only the
+> embedding and ranking layers. Phase 0 steps 2-3 and all of Phase 1 are executed as **Act 1** of #11
+> via [GH-11-ACT1-HYBRID-RETRIEVAL.md](GH-11-ACT1-HYBRID-RETRIEVAL.md). Phase 2's 250-query benchmark
+> is deferred: the existing 30-query set is saturated (#11 caveat 2) and growing it is human
+> labelling work. Phases 3-5 stand as written.
+
 ## Phase 0 — Decision lock and repo scaffolding
 
 1. Ratify this doc as canonical; mark the five research inputs as evidence appendices.
@@ -217,55 +225,162 @@ into the repo's guiding docs.
 
 ## Phase 2 — Frozen private benchmark
 
-250 hand-annotated real developer questions from own private repos, gold-labeled at file and
-symbol level, frozen before any model selection. Slices: exact symbol lookup 30, Python 30,
-JS/TS 30, PHP 30, HTML/Blade/Twig templates 25, cross-language PHP↔JS/TS bridging 30,
-architecture/"how does X work" 30, test↔implementation linkage 25, no-answer negatives 20.
-Separate ~30-question dev split tunes the no-answer threshold τ; the frozen set is never used
-for training or selection.
+> **Rescoped 2026-09-07** after the Act 1 measurement and a ponytail/debug-mantra audit
+> (`PARKED/2026-09-07-phases-2-5-ponytail-audit.md`). The original 250-question, 9-slice spec
+> assumed a corpus that did not exist and mis-diagnosed the problem as sample size.
 
-Metrics: file-level and symbol-level Recall@5/@10, MRR@10, nDCG@10, no-answer precision,
-latency p50/p95, indexing throughput (chunks/sec), index size on disk, and end-to-end agent
-context success rate (top-5 chunks fed to a coding agent, downstream pass rate). Bootstrap
-confidence intervals; no winner declared inside overlapping CIs.
+**The problem is saturation, not volume.** On the 30-query set, dense retrieval returns the right
+file in the top 3 for *every* query (R@3 = 1.000, MRR 0.9444). A ruler reading 100% cannot rank two
+retrievers, and 220 more questions of the same difficulty produce a longer ruler that still reads
+100%. Issue #8 already showed why most of these queries are easy: prefixing each chunk with its file
+path moved MRR 0.80 → 0.98, because the answers are carried by filenames
+(`"probe klaviyo api rate limits"` → `scripts/probe_klaviyo_rate_limits.py`). **Any question a
+filename answers cannot separate two retrievers.**
 
-**QA gate:** all 250 queries have hand-verified gold labels; slice counts match; benchmark
-harness runs the full matrix unattended and emits one scorecard.
+So the target is **difficulty, not count**: roughly **60-80 questions selected to be hard**, frozen
+before any model selection.
+
+**Corpus (decided 2026-09-07: XYZ serves the PHP/WordPress repos too).** The four originally indexed
+repos are Python/JS only — across all of them: 1 `.php` file, 0 `.blade.php`, 0 `.twig`, 0 `.tsx`.
+PHP coverage therefore requires indexing the WordPress repos, which are real and git-backed:
+
+| repo | .php | .js |
+|---|---:|---:|
+| `universal-child-theme-oct-2024` | 47 | 21 |
+| `KISS-woo-order-monitoring-alerts` | 59 | 1 |
+| `LTVera-Pandas` | — | 390 |
+| `rebalanceOS` / `aegis-sleuth-slack-bot` / `XYZ-forge` | — | 459 |
+
+**Blade and Twig are dropped as slices.** They are Laravel/Symfony conventions and appear **zero**
+times in this stack; WordPress uses plain PHP templates. The template slice is retargeted to WP theme
+templates and HTML, which do exist.
+
+Slices, sized to the corpus (~70 questions):
+
+| slice | n | why it is hard |
+|---|---:|---|
+| behaviour-described, not named | 15 | the query shares no token with the file or symbol name |
+| cross-file / "how does X work" | 12 | the answer spans call sites, not one chunk |
+| PHP (WordPress plugin + theme) | 12 | new corpus; hooks/filters indirection |
+| Python | 10 | behaviour-led, not filename-led |
+| JS | 8 | behaviour-led |
+| WP templates + HTML | 6 | markup with logic embedded |
+| test ↔ implementation linkage | 5 | asymmetric naming |
+| no-answer negatives | 8 | must return nothing, not a plausible wrong chunk |
+
+A separate ~15-question dev split tunes τ. The frozen set is never used for training or selection.
+
+**Reuse, do not rebuild.** The query-file format (`.embed-tmp/eval/queries-*.json`) already works and
+`xyz eval` already computes MRR@D / R@k / miss@D with chunk-id-preserving rankings. `xyz/eval/metrics.py`
+is the **canonical** scorer; `.embed-tmp/eval/score_retrieval.py` and `ask_self_eval.py` should call it
+rather than reimplement the metrics — three implementations exist today and that is two too many.
+
+Metrics: file- and symbol-level Recall@5/@10, MRR@10, nDCG@10, no-answer precision, latency p50/p95.
+Indexing throughput and index size are already emitted by `xyz ingest`; no new instrumentation.
+Bootstrap confidence intervals; no winner declared inside overlapping CIs.
+
+**Dropped:** end-to-end agent context success rate (top-5 chunks fed to a coding agent, downstream
+pass rate). That is an agent-in-the-loop evaluation system — its own non-determinism, cost and
+flakiness — built to referee a difference the direct metrics cannot yet measure. Revisit only if two
+candidates tie on the harder set.
+
+**QA gate:** every question hand-verified; **at least one arm scores below R@3 = 1.000** (proof the
+set actually discriminates — a set that saturates again has failed its purpose); the PHP repos are
+indexed and their gold paths resolve; the harness runs unattended and emits one scorecard.
 
 ## Phase 3 — Model bake-off
 
-1. Apple Silicon smoke-test gate first for every `trust_remote_code` model: one-batch encode,
-   one training step, save/reload round-trip on MPS.
-2. Run candidates (CodeRankEmbed, NightOwl-35M, jina-v2-base-code on the template slice,
-   optionally CodeSage-small-v2) against the five controls on the frozen benchmark; CoIR subset
-   as public regression.
-3. **Decision rule:** if a candidate hits file-level Recall@10 ≥ 0.80 AND MRR@10 ≥ 0.70 on the
-   Python, JS/TS, and PHP slices → adopt as-is and invest in chunking + reranking; skip Phase 4.
-   If it trails on PHP or cross-language slices → proceed to Phase 4 on the code-capable base
-   (never on BGE-small).
+> **Rescoped 2026-09-07.** CodeRankEmbed already clears this phase's own decision rule by ~20 points
+> (measured R@10 = 1.000, MRR = 0.9444 against a bar of 0.80 / 0.70). The bake-off's job is therefore
+> **to try to break that result on a harder set**, not to survey the field.
 
-**QA gate:** scorecard published into this doc (memory-injection rule); winner declared only
-outside overlapping CIs; decision + rationale recorded.
+1. Apple-Silicon smoke gate for any `trust_remote_code` model: one-batch encode and a save/reload
+   round-trip. (The training-step check is dropped — nothing is trained unless Phase 4 re-opens.)
+2. Run **CodeRankEmbed vs one challenger** on the Phase 2 frozen set using the existing N-arm scorer
+   (`score_retrieval.py`, GH-6 — already supports per-arm `--model`/`--backend` and was verified
+   against the Run 9 baseline). Pick the challenger for the weakness the harder set exposes — a
+   code-aware reranker if reranking is the gap, a different base if PHP is.
+3. **Decision rule (unchanged):** file-level Recall@10 ≥ 0.80 AND MRR@10 ≥ 0.70 on the Python, JS and
+   PHP slices → adopt as-is, invest in chunking + reranking, **skip Phase 4**.
 
-## Phase 4 — Conditional fine-tuning
+**Dropped:** the four-model matrix, the five controls, and the CoIR public-suite regression. This
+doc's own evidence appendices record that public CSN/CoIR numbers are leakage-inflated upper bounds
+and that *"the frozen benchmark is the only number that decides anything"* — so the CoIR arm decides
+nothing by our own reasoning.
 
-Only if the Phase 3 rule fails. Mine own-repo triplets, supplement per the datasets section,
-dedup against the benchmark repos at function level, train LoRA on the winning base with the
-pipeline above, re-run the frozen benchmark. Distillation into a smaller student is the
-last-resort footprint play only.
+**QA gate:** scorecard published into this doc; winner declared only outside overlapping CIs;
+decision + rationale recorded.
 
-**QA gate:** fine-tuned model beats its own base on the frozen benchmark outside CIs; no
-benchmark query (or its gold chunk) appears in training data.
+## Phase 4 — Conditional fine-tuning — DEFERRED
 
-## Phase 5 — Ask-Self sunset and migration
+> **Deferred 2026-09-07 by Phase 3's own rule.** The rule says *"adopt as-is … skip Phase 4"* when
+> R@10 ≥ 0.80 and MRR@10 ≥ 0.70. CodeRankEmbed measured **1.000** and **0.9444**. The rule has fired.
 
-1. Port the surviving Ask-Self harness configs to XYZ format for the repos that use them.
-2. Replace the `/ask_self` and `/reingest` skill entry points with XYZ equivalents.
-3. Archive the Ask-Self repo: README banner pointing here, final tag, stop indexing.
-4. Delete stale global state (`ASK_SELF_PATH` export, copied slash commands).
+Stated honestly against itself: those numbers come from a saturated set and are an upper bound, so a
+harder set could still drop the model below the bar. That is a reason to **defer**, not to build now
+— nothing about LoRA gets cheaper by starting early, and the whole phase is wasted if the rule holds.
 
-**QA gate:** every repo formerly served by Ask-Self answers its smoke queries through XYZ at
-equal-or-better Recall@10; Ask-Self archived with pointer.
+**Re-open condition (the only one):** the Phase 2 frozen set drops CodeRankEmbed below file-level
+R@10 0.80 or MRR@10 0.70 on the Python, JS or PHP slices. If that happens, the original plan applies
+— mine own-repo triplets, dedup against the benchmark repos at function level, LoRA on the winning
+code-capable base (never BGE-small), re-run the frozen benchmark. Distillation stays a last-resort
+footprint play.
+
+**QA gate (if re-opened):** fine-tuned model beats its own base outside CIs; no benchmark query or
+gold chunk appears in training data.
+
+## Phase 5 — Ask-Self absorption (was: sunset and migration)
+
+> **Inverted 2026-09-07** on the operator's recalibration (reuse/adapt over rebuild) and a full
+> module inventory of `ask-self@origin/main` (`461574f`). The previous plan moved five subsystems
+> *into* XYZ. That was backwards.
+
+**Ask-Self already is the application.** It has the CLI (`ask_self_cli.py`, `bin/ask-self`), the HTTP
+boundary (`rag_agent.py`), harness config, multi-repo registry, synthesis, citations, revision
+history, PR ingestion, an architecture summariser, an eval harness, events and a dashboard — roughly
+**7,700 lines that are already provider-agnostic**. Three inventory facts settle the direction:
+
+1. **Synthesis is already pluggable.** `synthesize()` (`ask_self_query.py:1449`) dispatches on
+   `settings["provider"]` to four sibling generators — Gemini (`:759`), Ollama (`:808`),
+   OpenAI-compatible (`:859`), Cloudflare (`:918`). Gemini is the default, not privileged. There is
+   nothing to port.
+2. **Citations are pure post-processing** (`ask_self_query.py:1673-1685`) — built from retrieval hits,
+   deduped, capped at 8, no model involved.
+3. **`ask_self_eval.py` already takes a pluggable retriever** — `Retriever = Callable[[str], list[str]]`
+   (`:166`), so XYZ can be scored by Ask-Self's existing harness by passing one function.
+
+**What XYZ actually adds** — and all Act 1 was right to build: Tree-sitter chunking (Ask-Self's
+`ask_self_helpers.py` chunkers are regex/line-based — no parse tree, no nested-symbol boundaries),
+FTS5 + RRF + rerank retrieval, and local/offline embedding at $0 per query.
+
+**So the swap surface is two functions, not five subsystems:**
+
+1. **Ingest side** — `embed_one` / `embed_batch` (`ask_self_ingest.py:426`, `:502`) call XYZ's local
+   embedder instead of the Gemini/Cloudflare HTTP path.
+2. **Query side** — `knn_search` (`ask_self_query.py:1199`) calls XYZ's `Retriever` instead of
+   pure vector KNN plus a 0.02 priority boost.
+
+Everything else stays where it is and keeps working. Then:
+
+3. Fix the corpus/classification config so Ask-Self's chunker dispatch defers to XYZ's chunkers; the
+   engine-independent half of `ask_self_harness.json` (paths, corpus filters, classification rules)
+   is reused as-is.
+4. Point `/ask_self` and `/reingest` at the swapped path — the entry points do not change, only what
+   they call.
+5. Retire the duplicate scorers: `ask_self_eval.py` and `score_retrieval.py` call
+   `xyz/eval/metrics.py` rather than reimplement it.
+
+**Correction to issue #11 (verified 2026-09-07).** It states that `fetchMergedPRs` and
+`buildArchitectureSummary` must be *"ported into Python before deletion"*. Both are wrong:
+`fetch_merged_prs` already exists in Python (`ask_self_ingest.py:827-873`, consumed at `:1384` and
+`:1495`, configured by `ask_self_harness.json:22-30`), and `buildArchitectureSummary` does not exist
+in the repo at all — there is no Node ingest path, `ask_self_query.mjs` being query-only, while
+`ask_self_architecture.py` (1,131 lines) already writes `ARCHITECTURE.md` with an `ast` symbol index
+and a deterministic non-LLM fallback. **These stated blockers are already cleared.**
+
+**QA gate:** every repo formerly served by Ask-Self answers its smoke queries through the swapped
+path at equal-or-better Recall@10, scored by `ask_self_eval.py` against both the old and new
+retriever; no second index, no second synthesis path, no second scorer introduced.
 
 ## Open questions and risks
 

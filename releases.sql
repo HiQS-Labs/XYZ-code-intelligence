@@ -1,6 +1,6 @@
 -- releases-app canonical dump (GH-32 grammar: GID-keyed rows, natural keys elsewhere,
 -- no integer PKs/FKs as values; rebuild renumbers deterministically)
--- generation: 1
+-- generation: 6
 -- table: schema_migrations
 INSERT INTO schema_migrations(version, applied_at) VALUES('1', '2026-08-28T16:49:25Z');
 INSERT INTO schema_migrations(version, applied_at) VALUES('2', '2026-08-28T16:49:25Z');
@@ -10,7 +10,19 @@ INSERT INTO schema_migrations(version, applied_at) VALUES('5', '2026-08-28T16:49
 INSERT INTO schema_migrations(version, applied_at) VALUES('6', '2026-08-28T16:49:25Z');
 -- table: settings
 INSERT INTO settings(key, value) VALUES('enforcement', 'lenient');
-INSERT INTO settings(key, value) VALUES('generation', '1');
+INSERT INTO settings(key, value) VALUES('generation', '6');
 INSERT INTO settings(key, value) VALUES('repo_slug', 'XYZ-code-intelligence');
 -- table: repos
 INSERT INTO repos(global_id, slug) VALUES('repo-01M14MDD681EQCR3FG723G8CJ9', 'XYZ-code-intelligence');
+-- table: roadmap_items
+INSERT INTO roadmap_items(global_id, repo_gid, gh_number, title, section, position, status_marker, complexity, risk, effort, doc_path, issue_url, raw_text, first_seen, updated_at, rating_pri, rating_sev, rating_appeal, rating_effort, rating_ovr) VALUES('rmi-01M15YR2N9JQ8GY8S3F4SNXBRH', 'repo-01M14MDD681EQCR3FG723G8CJ9', '5', 'GH-5 · int8 Quantization Benchmark on GCP Intel', 'Queue / parked intake', '1', NULL, NULL, NULL, NULL, NULL, NULL, '- **GH-5 · int8 Quantization Benchmark on GCP Intel** — [PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md](<PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md>) — benchmark ONNX/OpenVINO int8 query-encode latency on Sapphire Rapids; rated 3/3/3/5', '2026-08-29T05:09:15Z', '2026-09-06T18:09:15Z', '3', '3', '3', '5', NULL);
+INSERT INTO roadmap_items(global_id, repo_gid, gh_number, title, section, position, status_marker, complexity, risk, effort, doc_path, issue_url, raw_text, first_seen, updated_at, rating_pri, rating_sev, rating_appeal, rating_effort, rating_ovr) VALUES('rmi-01M1VYJ1EDFWREBC3DN919WKRJ', 'repo-01M14MDD681EQCR3FG723G8CJ9', '11', 'GH-11 · Act 1 — XYZ hybrid retrieval library', 'In progress', '1', NULL, NULL, NULL, NULL, NULL, NULL, '- **GH-11 · Act 1 — XYZ hybrid retrieval library** — [PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md](<PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md>) — canonical Phase 0 close-out + Phase 1 as one marathon (`GH-11-marathon/MARATHON.yaml`); keystone for the v0.5 release; rated 85/60/50/30
+- [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and sunset Ask-Self; the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.', '2026-09-06T18:09:15Z', '2026-09-06T18:09:47Z', '85', '60', '50', '30', NULL);
+INSERT INTO roadmap_items(global_id, repo_gid, gh_number, title, section, position, status_marker, complexity, risk, effort, doc_path, issue_url, raw_text, first_seen, updated_at, rating_pri, rating_sev, rating_appeal, rating_effort, rating_ovr) VALUES('rmi-01M1VYK0ZBFVDKC528VRXMW1K4', 'repo-01M14MDD681EQCR3FG723G8CJ9', '6', 'GH-6 · score_retrieval.py local-only comparison mode', 'In progress', '2', NULL, NULL, NULL, NULL, NULL, NULL, '- **GH-6 · score_retrieval.py local-only comparison mode** — [PROJECT/2-WORKING/v0.5/GH-6-LOCAL-ONLY-SCORER.md](<PROJECT/2-WORKING/v0.5/GH-6-LOCAL-ONLY-SCORER.md>) — N-arm local scoring with Gemini opt-in; unblocks GH-5 Phase 4; implemented, baseline reproduced; rated 2/2/2/1
+- [FINDINGS-0.5 — Embedding Model Evaluation Findings Log](<PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md>) — running findings log for the v0.5 embedding evaluation; spans GH-2/3/4/5 rather than owning one issue.', '2026-09-06T18:09:47Z', '2026-09-06T18:09:47Z', '2', '2', '2', '1', NULL);
+-- table: op_receipts
+INSERT INTO op_receipts(op, target_gid, at, txn_id, session_id, state_digest_before, state_digest_after) VALUES('roadmap-add', 'rmi-01M15YR2N9JQ8GY8S3F4SNXBRH', '2026-08-29T05:09:15Z', '62b99ccbc3dd418b9ec3a0b6a4c6a8a1', 'default', '16ffc3310565b1d2b26be2311dc66ad148b233f0af1a1288ff789a456c29b1d8', 'cf6c0b08e995d816477b84ff80ba01cbb0feea90c39932f3179e9f4046ccf84f');
+INSERT INTO op_receipts(op, target_gid, at, txn_id, session_id, state_digest_before, state_digest_after) VALUES('roadmap-add', 'rmi-01M1626V3RB66REBXWFCMRWMKM', '2026-08-29T06:09:45Z', '242f79825ae043b4b88043758d87f634', 'default', 'cf6c0b08e995d816477b84ff80ba01cbb0feea90c39932f3179e9f4046ccf84f', 'df3a8dc72a9d20d2cf89ba863f77694aabc4fbf707c8c28453907d275b002a34');
+INSERT INTO op_receipts(op, target_gid, at, txn_id, session_id, state_digest_before, state_digest_after) VALUES('roadmap-repoint', 'rmi-01M1626V3RB66REBXWFCMRWMKM', '2026-08-29T06:13:51Z', 'e0d6bcf167564f13a41ea3e32229030d', 'default', 'df3a8dc72a9d20d2cf89ba863f77694aabc4fbf707c8c28453907d275b002a34', '2365f24921a0217ec7a2ddc5ff580b294ce06b2f04680551e1eba58f46f5ddf8');
+INSERT INTO op_receipts(op, target_gid, at, txn_id, session_id, state_digest_before, state_digest_after) VALUES('roadmap-sync', NULL, '2026-09-06T18:09:15Z', '2f09b216a9764e629f59afd757ebcd0e', 'default', '2365f24921a0217ec7a2ddc5ff580b294ce06b2f04680551e1eba58f46f5ddf8', 'd2efeb680bb0a74ca369c254542e39dc3f84bda4f7ab45e7dfd20d7560a214ff');
+INSERT INTO op_receipts(op, target_gid, at, txn_id, session_id, state_digest_before, state_digest_after) VALUES('roadmap-sync', NULL, '2026-09-06T18:09:47Z', '8919c94738734f38bfc88a9991be1439', 'default', 'd2efeb680bb0a74ca369c254542e39dc3f84bda4f7ab45e7dfd20d7560a214ff', '91a5df1f1c5221929e1eb4e5dc9e1d158ad0c978370a4c4f45a448528614fb52');

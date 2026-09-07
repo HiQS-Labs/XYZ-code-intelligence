@@ -1,0 +1,15 @@
+FIRSTHAND_COUNT=18
+ECHOED_COUNT=13
+ECHOED `validate.sh`
+ECHOED `xyz/`
+ECHOED `cross-encoder/ms-marco-MiniLM-L-6-v2`
+ECHOED `xyz/`
+ECHOED `validate.sh`
+ECHOED `cross-encoder/ms-marco-MiniLM-L-6-v2`
+ECHOED `prelaunch.sh`
+ECHOED `validate.sh`
+ECHOED `cross-encoder/ms-marco-MiniLM-L-6-v2`
+ECHOED `prelaunch.sh`
+ECHOED `prelaunch.sh`
+ECHOED `prelaunch.sh`
+ECHOED `prelaunch.sh`

@@ -1,0 +1,170 @@
+{
+  "schema": "swarm-preflight/run-candidate@1",
+  "generated_at": "2026-09-06T18:10:36Z",
+  "mode": "project-doc",
+  "candidate": {
+    "slug": "gh-11-act1-hybrid-retrieval"
+  },
+  "provenance": {
+    "source_docs": [
+      "/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1/PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+    ],
+    "issues": [],
+    "target_root": "/Users/noelsaw/Documents/GH Repos/XYZ-code-intelligence-gh11-act1",
+    "branch": "marathon/gh11-act1-hybrid-retrieval-2026-09-05",
+    "commit": "eb4f3d061be363f95540fe88e32da472b46e3158",
+    "suggested_branch": "marathon/gh-11-act1-hybrid-retrieval-2026-09-06",
+    "branch_ready": false,
+    "skip_branch_prompt": false
+  },
+  "contract": {
+    "target": {
+      "repo": ".",
+      "ref": "marathon/gh11-act1-hybrid-retrieval-2026-09-05"
+    },
+    "gate": "bash validate.sh",
+    "fix_probes": [
+      {
+        "type": "path_absent",
+        "path": "pyproject.toml"
+      },
+      {
+        "type": "path_absent",
+        "path": "xyz/"
+      },
+      {
+        "type": "path_absent",
+        "path": "tests/"
+      },
+      {
+        "type": "path_absent",
+        "path": "xyz/retrieve/pipeline.py"
+      }
+    ],
+    "artifacts": [
+      "GUIDING-PRINCIPLES.md",
+      "pyproject.toml",
+      "validate.sh",
+      "xyz/",
+      "tests/",
+      "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
+      "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+    ],
+    "artifacts_new": [
+      "pyproject.toml",
+      "xyz/",
+      "tests/"
+    ],
+    "remediation": {
+      "source": "self#phases",
+      "criteria": "Phases gh11-p0-scaffold through gh11-p4-roundtrip of this doc, each gated by bash validate.sh"
+    },
+    "lanes": {
+      "agy_safe": [],
+      "orchestrator_only": [
+        ".tick/",
+        "marathon-system/",
+        "relay-system/"
+      ]
+    }
+  },
+  "freshness": {
+    "fetch_ok": true,
+    "upstream": "origin/v0.5/embedding-eval-coderankembed-vs-gemini",
+    "ahead": 1,
+    "behind": 0,
+    "dirty": true,
+    "stale_index_lock": false,
+    "stale_index_lock_path": null,
+    "stale_index_lock_warning": null,
+    "evaluated_ref": "marathon/gh11-act1-hybrid-retrieval-2026-09-05",
+    "evaluated_ref_commit": "eb4f3d061be363f95540fe88e32da472b46e3158",
+    "checkout_matches_ref": true,
+    "head_behind_ref": 0,
+    "candidate_state": "ready",
+    "probes": [
+      {
+        "type": "path_absent",
+        "path": "pyproject.toml",
+        "verdict": "unfixed"
+      },
+      {
+        "type": "path_absent",
+        "path": "xyz/",
+        "verdict": "unfixed"
+      },
+      {
+        "type": "path_absent",
+        "path": "tests/",
+        "verdict": "unfixed"
+      },
+      {
+        "type": "path_absent",
+        "path": "xyz/retrieve/pipeline.py",
+        "verdict": "unfixed"
+      }
+    ]
+  },
+  "readiness": {
+    "ready": true,
+    "next_action": null,
+    "unscoped_index_only": [],
+    "issue_state": {
+      "status": "OPEN",
+      "closed_at": null,
+      "detail": "issue #11 is OPEN"
+    },
+    "frozen_artifacts": [],
+    "acceptance_fidelity": {
+      "status": "unknown",
+      "cause": "no-issue-section",
+      "detail": "issue #11 has no '## Acceptance' section \u2014 nothing to copy from",
+      "issue": "11",
+      "dropped": [],
+      "added": [],
+      "declared": 0
+    },
+    "source_url": {
+      "status": "ok",
+      "detail": "source: resolves to issue #11 (https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/11)",
+      "issue": "11",
+      "url": "https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/11",
+      "slug": "HiQS-Labs/XYZ-code-intelligence"
+    },
+    "acceptance_inline": {
+      "criteria": 0,
+      "scope": "whole-document",
+      "over_cap": 0,
+      "lossless": true
+    }
+  },
+  "lane_plan": {
+    "orchestrator_owned": [],
+    "codex_lane": [
+      "GUIDING-PRINCIPLES.md",
+      "pyproject.toml",
+      "validate.sh",
+      "xyz/",
+      "tests/",
+      "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
+      "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+    ],
+    "agy_lane": [],
+    "effective_artifacts": [
+      "GUIDING-PRINCIPLES.md",
+      "pyproject.toml",
+      "validate.sh",
+      "xyz/",
+      "tests/",
+      "PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md",
+      "PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md"
+    ],
+    "inferred_test_artifacts": [],
+    "inferred_test_helpers": [],
+    "fs_touching_tests": [],
+    "agy_review_default": true,
+    "coupling_warning": null,
+    "parallelizable": true,
+    "single_lane_only": false
+  }
+}

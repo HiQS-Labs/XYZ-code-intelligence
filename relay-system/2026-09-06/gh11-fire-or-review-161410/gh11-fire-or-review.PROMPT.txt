@@ -1,0 +1,47 @@
+# Decision: fire the marathon now, or run a 5th plan-review round?
+
+You are advising on a build in this repo (branch `marathon/gh11-act1-hybrid-retrieval-2026-09-05`).
+
+## What is planned
+A 5-phase marathon implementing Act 1 of issue #11 — the XYZ hybrid retrieval library
+(canonical doc Phase 0 close-out + all of Phase 1). Read these:
+- `PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md` (the plan)
+- `PROJECT/2-WORKING/v0.5/GH-11-marathon/MARATHON.yaml` + its five `brief-p*.md`
+- `validate.sh` (per-phase gate), `prelaunch.sh` (operator readiness control)
+- `relay-system/2026-09-06/gh11-act1-plan-review.md` (the full 4-round review)
+
+## What has happened
+Codex plan-reviewed it for FOUR rounds. 14 findings, all implemented.
+- Rounds 1-2 improved the five phase briefs and found TWO REAL DEFECTS:
+  (a) `tree_sitter_language_pack` downloads grammars at first use, so every offline builder
+      turn would have failed at the chunker;
+  (b) `cross-encoder/ms-marco-MiniLM-L-6-v2` loads cleanly on torch 2.14 / transformers 5.16
+      and returns `[nan, nan]` logits — silently broken reranker.
+- Rounds 3-4 were ENTIRELY about `prelaunch.sh`, a readiness script that was ADDED to satisfy a
+  round-2 finding: first marker-invalidation-on-failure, then binding the HuggingFace cache
+  fingerprint to library-resolved constants instead of a hand-built path.
+- Round 4 verdict: 1 blocker (now fixed, verified with 4 red controls: XDG_CACHE_HOME,
+  HUGGINGFACE_HUB_CACHE, HF_HUB_CACHE, HF_HOME drift all rejected) + 3 passes. The reviewer
+  explicitly closed DoD question 5 (falsifiable checks). Round cap 4/4 exhausted, STATUS Escalated.
+
+## The tension
+NO product code exists yet. The `xyz/` package is created BY the marathon. Four rounds of review
+have been spent on planning apparatus — briefs, a gate, and a pre-launch checker — while the
+actual deliverable (chunkers, SQLite+FTS5+vec store, RRF+rerank retrieval, a real round-trip on a
+5000-chunk corpus) has not started. Each phase ALSO gets its own build+review loop inside the
+marathon (reviewer agy, max_review_rounds 2-3 per phase), so the code will be reviewed regardless.
+
+## Your task
+Vote **FIRE** (launch the marathon now) or **REVIEW** (a 5th plan-review round is justified).
+
+Answer these directly:
+1. Your vote, in the first line: `VOTE: FIRE` or `VOTE: REVIEW`.
+2. One paragraph of reasoning.
+3. Be blunt: is this overengineering? Has the review loop crossed from finding real defects into
+   polishing a checker that runs once, on the operator's own machine?
+4. Name the ONE thing that would actually change your vote.
+5. If FIRE: name the single highest risk you'd accept, and what you'd watch for in phase 1 output.
+   If REVIEW: name the specific defect you believe a 5th round would catch that the marathon's own
+   per-phase review would NOT.
+
+Be concise and decisive. Do not hedge into "it depends".

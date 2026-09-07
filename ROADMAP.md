@@ -14,17 +14,20 @@
 
 | What was just completed | What's next |
 |---|---|
-| Synthesized v0.5 research into the canonical XYZ build doc (2026-08-28). | Phase 1 of the canonical doc: chunking + hybrid retrieval skeleton. |
+| GH-11 Act 1 delivered — `xyz` package, chunkers, store, hybrid retrieval and a real round-trip, all 5 marathon phases approved, QA passed (PR #15); canonical Phases 2-5 rescoped (2026-09-07). | Phase 2: the ~70-question **harder** frozen set, now including the PHP/WordPress repos. Act 1 measured dense-only ahead of hybrid+rerank, so the set must actually discriminate. |
 
 ## Ledger
 
 ### Queue / parked intake
 
-- No parked intake docs.
+- **GH-5 · int8 Quantization Benchmark on GCP Intel** — [PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md](<PROJECT/2-WORKING/v0.5/GH-5-QUANTIZATION-BENCHMARK.md>) — benchmark ONNX/OpenVINO int8 query-encode latency on Sapphire Rapids; rated 3/3/3/5
 
 ### In progress
 
-- [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and sunset Ask-Self; the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.
+- **GH-11 · Act 1 — XYZ hybrid retrieval library** — [PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md](<PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md>) — canonical Phase 0 close-out + Phase 1, delivered via marathon; PR #15 open (not merged); rated 85/60/50/30
+- [XYZ Code Intelligence v0.5 — Canonical Research and Build Doc](<PROJECT/2-WORKING/v0.5/XYZ Code Intelligence v0.5 — Canonical Research and Build Doc.md>) — 6-phase plan to build XYZ and absorb Ask-Self; Phases 0-1 delivered, Phases 2-5 rescoped 2026-09-07 (Phase 4 deferred, Phase 5 inverted to a two-function swap); the five v0.5 research docs in the same folder are its roadmap-exempt evidence appendices.
+- **GH-6 · score_retrieval.py local-only comparison mode** — [PROJECT/2-WORKING/v0.5/GH-6-LOCAL-ONLY-SCORER.md](<PROJECT/2-WORKING/v0.5/GH-6-LOCAL-ONLY-SCORER.md>) — N-arm local scoring with Gemini opt-in; unblocks GH-5 Phase 4; implemented, baseline reproduced; rated 2/2/2/1
+- [FINDINGS-0.5 — Embedding Model Evaluation Findings Log](<PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md>) — running findings log for the v0.5 embedding evaluation; spans GH-2/3/4/5 rather than owning one issue.
 
 ### Completed
 

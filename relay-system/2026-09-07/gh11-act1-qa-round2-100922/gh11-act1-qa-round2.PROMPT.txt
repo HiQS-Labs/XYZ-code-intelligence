@@ -1,0 +1,41 @@
+# Final QA — GH-11 Act 1 implementation (PR #15)
+
+Budget note: you have ~15 minutes. **Produce a verdict even if you have not read everything.**
+If you run short, stop exploring and write your findings — a partial graded answer is required;
+silence is not. Put the verdict in your FIRST line.
+
+## Scope — audit these files only
+`xyz/index/store.py`, `xyz/retrieve/pipeline.py`, `xyz/retrieve/dense.py`, `xyz/retrieve/lexical.py`,
+`xyz/retrieve/fuse.py`, `xyz/eval/metrics.py`, `xyz/ingest/walk.py`, and `tests/`.
+Do NOT read PROJECT/**, relay-system/**, marathon-system/**, ROUTER.md, or the plan docs — the
+contracts you need are stated below. Do not run the test suite; read the tests.
+
+## The five contracts to verify (cite file:line for each)
+1. **Single writer** — `xyz/index/store.py` is the only module that writes the `chunks`,
+   `chunks_fts` or `chunks_vec` tables. No second index path.
+2. **`k = ?` KNN** — dense search uses sqlite-vec's `k = ?` bound form, never a parameterised
+   `LIMIT ?` (the latter 500'd in production upstream). Is it actually used at runtime, or only
+   present in a string the test asserts on?
+3. **Pruning safety** — an incomplete directory walk must raise `WalkIncomplete` **before any
+   write or delete**, so a partial enumeration cannot prune live rows. Trace the actual order of
+   operations in `Store.ingest`, not the docstring.
+4. **τ is query-level** — the no-answer threshold is a decision about the whole result based on the
+   top score, not a per-hit filter, and an empty candidate set is no-answer regardless of τ.
+5. **Rerank tail + chunk ids** — fuse → truncate to depth → rerank the first min(depth,50) →
+   append the untouched tail in RRF order; reranker scores are never compared against RRF scores;
+   `(chunk_id, path)` pairs survive into `xyz/eval/metrics.py` so a same-path reorder is visible.
+
+## The measured result to explain (this is the important question)
+30-query set, depth 100, 3,020 chunks. dense MRR 0.9444 / R@1 0.9000 · hybrid 0.9222 / 0.8667 ·
+hybrid+rerank 0.9016 / 0.8667. Rerank latency p50 50,004 ms on CPU. 30/30 top-10s reordered.
+
+**Dense-only beat both hybrid arms.** Is that a BUG in this code — wrong score signs, a broken BM25
+sanitiser, bad RRF, wrong rerank depth, reranker applied to the wrong text — or a genuine property
+of a saturated 30-query set plus a general-domain reranker on code? Point at the specific code that
+decides it. This is the finding I most need graded.
+
+## Output format (keep it under 400 words)
+Line 1: `VERDICT: PASS` or `VERDICT: CHANGES REQUESTED`.
+Then graded bullets `[Blocker]`/`[Should]`/`[Nit]`/`[Pass]`, each with file:line.
+End with: which items must be fixed BEFORE merging PR #15, versus filed as follow-ups.
+Be blunt. Do not pad. Do not restate the contracts back to me.
