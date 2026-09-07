@@ -4,7 +4,7 @@ source: https://github.com/HiQS-Labs/XYZ-code-intelligence/issues/11
 title: GH-11 Act 1 — XYZ hybrid retrieval library (canonical doc Phase 0 + Phase 1)
 status: active
 created: 2026-09-05
-updated: 2026-09-06
+updated: 2026-09-07
 owner: Noel Saw
 goal: Ship the importable XYZ retrieval library — Tree-sitter chunking, SQLite chunks + FTS5 + sqlite-vec store with a provider-keyed embed cache and drift guard, and a BM25 + dense → RRF → cross-encoder rerank query path — verified by an ingest/query round-trip on one real repo, so Acts 2-5 of the v0.5 release are unblocked.
 doc_type: feedback
@@ -37,7 +37,7 @@ Capture of **Act 1** of [issue #11](https://github.com/HiQS-Labs/XYZ-code-intell
 
 | What was just completed | What's next |
 |---|---|
-| Built p4 CLI/evaluator and completed the real labelled-subset round-trip: 3,020 chunks, second ingest 8.62 s with zero embeddings, four modes scored, 30/30 reranked (2026-09-06). | agy reviews p4 implementation and recorded evidence; if approved, Act 1 is ready for orchestrator close-out. |
+| Act 1 complete: all 5 marathon phases Approved, 45 tests green, final Codex QA **PASS** (6 pass / 1 nit / 0 blockers), PR #15 open against `main` (2026-09-07). | Merge PR #15, then Phase 2 — the ~70-question harder frozen set including the PHP/WordPress repos. |
 
 ## Observed problem
 
@@ -238,3 +238,12 @@ n/a (feature). No operator override.
   hybrid+rerank 0.9016/0.8667, with zero misses in every arm and 30/30 top-10 chunk-id sequences
   reordered. The reranked arm remains within the 0.05 acceptance tolerance of dense on both load-
   bearing metrics. Full per-stage p50/p95 and QA-gate evidence are recorded in FINDINGS-0.5.md.
+
+- 2026-09-07 — Marathon complete: all five phases `STATUS: Approved`. Measured at depth 100 on the
+  30-query labelled subset (339 files / 3,020 chunks): dense MRR 0.9444 / R@1 0.9000; hybrid 0.9222;
+  hybrid+rerank 0.9016 with rerank p50 50,004 ms on CPU. **Dense-only won**; the acceptance criterion
+  passed only because it is a noise-floor test (within 0.05), and the 30-query set is saturated
+  (dense R@3 = 1.000) so it cannot referee the arms. Final Codex QA (900 s cap after the 300 s run
+  returned no verdict — XYZ-forge#480): **VERDICT: PASS**, and it adjudicated the dense win as *not*
+  an implementation bug — score signs, RRF and rerank head-replacement all trace correct. PR #15
+  opened. Canonical Phases 2-5 then rescoped; see `PARKED/2026-09-07-phases-2-5-ponytail-audit.md`.
