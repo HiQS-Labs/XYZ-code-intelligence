@@ -71,11 +71,6 @@ def _line_map(text: str, start_line: int) -> tuple[int, ...]:
     return tuple(result)
 
 
-def _line_at(source: bytes, byte_offset: int) -> int:
-    """Return a one-based line without trusting parser point metadata."""
-    return source[:byte_offset].count(b"\n") + 1
-
-
 def _draft(kind: str, qualified_name: str, text: str, start_line: int) -> _Draft:
     return _Draft(kind, qualified_name, text, _line_map(text, start_line))
 
@@ -147,7 +142,7 @@ def _ast_drafts(rel_path: str, source: bytes, language: str) -> list[_Draft]:
             continue
         kind = _TOP_LEVEL_TYPES[language][definition.type]
         text = source[outer.start_byte : outer.end_byte].decode("utf-8", errors="replace")
-        drafts.append(_draft(kind, name, text, _line_at(source, outer.start_byte)))
+        drafts.append(_draft(kind, name, text, outer.start_point.row + 1))
         occupied.append((outer.start_byte, outer.end_byte))
 
         if kind == "class":
@@ -167,7 +162,7 @@ def _ast_drafts(rel_path: str, source: bytes, language: str) -> list[_Draft]:
                             "method",
                             f"{name}.{method_name}",
                             method_text,
-                            _line_at(source, method.start_byte),
+                            method.start_point.row + 1,
                         )
                     )
 
@@ -176,14 +171,14 @@ def _ast_drafts(rel_path: str, source: bytes, language: str) -> list[_Draft]:
     for start, end in sorted(occupied):
         if start > cursor:
             raw = source[cursor:start].decode("utf-8", errors="replace")
-            mapped = _line_map(raw, _line_at(source, cursor))
+            mapped = _line_map(raw, source[:cursor].count(b"\n") + 1)
             part = _trim(raw, mapped)
             if part[0]:
                 residual_parts.append(part)
         cursor = max(cursor, end)
     if cursor < len(source):
         raw = source[cursor:].decode("utf-8", errors="replace")
-        mapped = _line_map(raw, _line_at(source, cursor))
+        mapped = _line_map(raw, source[:cursor].count(b"\n") + 1)
         part = _trim(raw, mapped)
         if part[0]:
             residual_parts.append(part)
@@ -309,3 +304,4 @@ def chunk_file(repo: str, rel_path: str, source: bytes) -> ChunkResult:
         if part.text
     ]
     return ChunkResult(chunks, warnings)
+

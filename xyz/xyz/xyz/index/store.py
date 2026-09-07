@@ -252,7 +252,6 @@ class Store:
         root: str | os.PathLike[str],
         chunker: Callable[..., ChunkResult] = chunk_repo,
         include_prefixes: Sequence[str] | None = None,
-        progress: Callable[[int, int, float], None] | None = None,
     ) -> IngestReport:
         started = time.monotonic()
         self.check_embedder(self.embedder)
@@ -274,11 +273,6 @@ class Store:
                 "SELECT path, file_sha FROM files WHERE repo = ?", (repo,)
             )
         }
-        candidate_chunks = sum(
-            len(chunks_by_path.get(path, ()))
-            for path, _source in walked
-            if existing.get(path) != file_shas[path]
-        )
 
         files_skipped = 0
         files_reingested = 0
@@ -394,8 +388,6 @@ class Store:
             files_reingested += 1
             chunks_written += len(chunks)
             chunks_embedded += len(missing)
-            if progress is not None and missing:
-                progress(chunks_embedded, candidate_chunks, time.monotonic() - started)
 
         walked_paths = set(file_shas)
         prefixes = _normalise_prefixes(include_prefixes)
