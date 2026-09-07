@@ -41,15 +41,3 @@ class FakeEmbedder:
     def encode_query(self, text: str) -> np.ndarray:
         self.query_calls += 1
         return self._vector(text)
-
-
-class FakeReranker:
-    """Return deterministic scores keyed by exact chunk text."""
-
-    def __init__(self, scores: dict[str, float] | None = None, default: float = 0.0) -> None:
-        self.scores = scores or {}
-        self.default = default
-
-    def score(self, query: str, texts: Sequence[str]) -> list[float]:
-        del query
-        return [float(self.scores.get(text, self.default)) for text in texts]
