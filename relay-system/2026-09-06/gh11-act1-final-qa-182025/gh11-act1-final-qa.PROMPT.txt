@@ -1,0 +1,38 @@
+# Final QA — GH-11 Act 1 implementation (marathon complete, all 5 phases Approved)
+
+Review the IMPLEMENTATION on this branch against its plan. This is the last gate before a PR.
+
+## Read
+- `PROJECT/2-WORKING/v0.5/GH-11-ACT1-HYBRID-RETRIEVAL.md` — the plan, acceptance and deviations
+- `xyz/` — the delivered package (ingest, index, retrieve, eval, cli)
+- `tests/` — 45 tests
+- `validate.sh` / `prelaunch.sh` — the gate and readiness control
+- `PROJECT/2-WORKING/v0.5/FINDINGS-0.5.md` → section "Run: XYZ hybrid retrieval round-trip (GH-11 Act 1)"
+
+## Measured result to scrutinise
+Depth-100, 30-query saturated LTVera-Pandas subset (339 files / 3,020 chunks):
+
+| mode | MRR@100 | R@1 | miss |
+|---|---|---|---|
+| dense | 0.9444 | 0.9000 | 0 |
+| BM25 | 0.8583 | 0.7667 | 0 |
+| hybrid | 0.9222 | 0.8667 | 0 |
+| hybrid+rerank | 0.9016 | 0.8667 | 0 |
+
+Rerank latency: p50 50,003 ms / p95 93,867 ms on CPU. Reranker reordered 30/30 top-10s.
+
+## Answer these, concisely
+1. Is each Act 1 acceptance item actually satisfied by the code (not just claimed)? Cite file:line.
+2. Did a duplicate subsystem, second writer, or parallel index path slip in? `xyz/index/store.py`
+   is supposed to be the single writer. Two phases accidentally created nested `xyz/xyz/` copies
+   which have now been deleted — confirm nothing references them and no logic was lost.
+3. Do the tests substantiate the claims, or are any vacuous? Specifically check the `k = ?` SQL
+   assertion, the incomplete-walk/WalkIncomplete guard, the FTS trigger evidence, the tau
+   query-level contract, and the chunk-id-preserving reorder count.
+4. **The headline concern:** dense-only beats hybrid and hybrid+rerank on this benchmark, and the
+   reranker costs 50 s/query on CPU. Is that a defect in the implementation (bad fusion, bad BM25
+   sanitiser, wrong rerank depth, wrong score signs) or a genuine property of a saturated 30-query
+   set plus a general-domain reranker? Point at the code that decides it.
+5. Anything that must be fixed BEFORE this becomes a PR, versus filed as follow-up.
+
+Grade findings [Blocker]/[Should]/[Nit]/[Pass]. Be blunt. Do not pad.
