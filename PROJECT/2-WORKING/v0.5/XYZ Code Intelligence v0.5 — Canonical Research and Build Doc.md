@@ -384,6 +384,12 @@ Everything else stays where it is and keeps working. Then:
    they call.
 5. Retire the duplicate scorers: `ask_self_eval.py` and `score_retrieval.py` call
    `xyz/eval/metrics.py` rather than reimplement it.
+6. Delete the known footguns in place. Under the old plan these sat in **Sunset (do not port)** and
+   would have died with the repo; under absorption Ask-Self *stays*, so "do not port" retires
+   nothing — each one has to be removed deliberately. Concretely: the globally exported
+   `ASK_SELF_PATH` (which made every repo query Ask-Self's own index), the `db_filename` vs
+   `db_path` footgun, the disabled Qwen provider paths, and the copied-not-linked slash commands
+   that go stale on upgrade.
 
 **Correction to issue #11 (verified 2026-09-07).** It states that `fetchMergedPRs` and
 `buildArchitectureSummary` must be *"ported into Python before deletion"*. Both are wrong:
